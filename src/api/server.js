@@ -5,7 +5,6 @@ const https = require('https');
 const fs = require('fs');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
-const authMiddleware = require('./middleware/auth');
 const config = require('../config/config');
 
 const app = express();
