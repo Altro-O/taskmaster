@@ -134,4 +134,4 @@ class LeaderboardService {
     }
 }
 
-module.exports = new LeaderboardService(); 
+module.exports = LeaderboardService; 

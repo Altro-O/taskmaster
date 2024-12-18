@@ -16,12 +16,13 @@ const bot = new TelegramBot(config.telegram.token, { polling: true });
 const reminderService = new ReminderService(bot);
 const taskController = new TaskController(reminderService);
 const gameService = new GameService();
+const leaderboardService = new LeaderboardService();
 const templateController = new TemplateController(taskController);
 
 // Хранение состояния пользователя
 const userStates = {};
 
-// Создаем временн��ю директорию для отчетов
+// Создаем временную директорию для отчетов
 const tempDir = path.join(__dirname, '../../temp');
 if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir);
@@ -122,7 +123,7 @@ bot.onText(/\/my_tasks/, async (msg) => {
         });
 
         if (tasks.length === 0) {
-            await bot.sendMessage(chatId, 'У вас нет активных задач');
+            await bot.sendMessage(chatId, 'У вас н��т активных задач');
             return;
         }
 
@@ -224,7 +225,7 @@ bot.on('message', async (msg) => {
                 userStates[chatId].step = 'AWAITING_TASK_DEADLINE';
                 await bot.sendMessage(
                     chatId, 
-                    'Введите дедлайн задачи в формате ДД.ММ.ГГГГ (или отправьте "-" чтобы пропустить):'
+                    'Введите дедлайн задачи в формате ДД.ММ.ГГГГ (или от��равьте "-" чтобы пропустить):'
                 );
                 break;
 
