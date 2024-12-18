@@ -11,10 +11,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Добавим статические файлы
-app.use(express.static('public'));
+// Статические файлы - важно указать абсолютный путь
+app.use(express.static(path.join(__dirname, '../public')));
 
-// Изменим корневой маршрут
+// Базовый маршрут
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
