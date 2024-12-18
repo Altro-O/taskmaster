@@ -25,6 +25,24 @@ if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir);
 }
 
+// В начале файла добавим общие константы
+const PRIORITY_KEYBOARD = {
+    reply_markup: {
+        keyboard: [
+            ['🟢 LOW', '🟡 MEDIUM'],
+            ['🟠 HIGH', '🔴 URGENT']
+        ],
+        one_time_keyboard: true
+    }
+};
+
+const PRIORITY_MAP = {
+    '🟢 LOW': 'LOW',
+    '🟡 MEDIUM': 'MEDIUM',
+    '🟠 HIGH': 'HIGH',
+    '🔴 URGENT': 'URGENT'
+};
+
 bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
     // Инициализируем достижения при первом запуске
@@ -39,7 +57,7 @@ bot.onText(/\/start/, async (msg) => {
         '/my_projects - Посмотреть мои проекты\n' +
         '/new_template - Создать шаблон задачи\n' +
         '/my_templates - Посмотреть мои шаблоны\n' +
-        '/create_from_template - Создать задачу из шаблона\n' +
+        '/create_from_template - Созда��ь задачу из шаблона\n' +
         '/set_priority - Установить приоритет задачи\n' +
         '/add_subtask - Добавить подзадачу\n' +
         '/toggle_subtask - Отметить подзадачу как выполненную\n' +
@@ -166,28 +184,18 @@ bot.on('message', async (msg) => {
             await bot.sendMessage(
                 chatId,
                 'Выберите приоритет задачи:',
-                {
-                    reply_markup: {
-                        keyboard: [
-                            ['🟢 LOW', '🟡 MEDIUM'],
-                            ['🟠 HIGH', '🔴 URGENT']
-                        ],
-                        one_time_keyboard: true
-                    }
-                }
+                PRIORITY_KEYBOARD
             );
             break;
 
         case 'AWAITING_TASK_PRIORITY':
-            let priority;
-            switch (text) {
-                case '🟢 LOW': priority = 'LOW'; break;
-                case '🟡 MEDIUM': priority = 'MEDIUM'; break;
-                case '🟠 HIGH': priority = 'HIGH'; break;
-                case '🔴 URGENT': priority = 'URGENT'; break;
-                default:
-                    await bot.sendMessage(chatId, '❌ Пожалуйста, выберите приоритет из предложенных вариантов');
-                    return;
+            const taskPriority = PRIORITY_MAP[text];
+            if (!taskPriority) {
+                await bot.sendMessage(
+                    chatId, 
+                    '❌ Пожалуйста, выберите приоритет из предложенных вариантов'
+                );
+                return;
             }
 
             try {
@@ -197,7 +205,7 @@ bot.on('message', async (msg) => {
                     userStates[chatId].taskDescription,
                     userStates[chatId].deadline,
                     null, // projectId
-                    priority
+                    taskPriority
                 );
                 await bot.sendMessage(chatId, '✅ Задача успешно создана!', {
                     reply_markup: { remove_keyboard: true }
@@ -246,7 +254,7 @@ bot.on('message', async (msg) => {
         case 'AWAITING_TEMPLATE_TITLE':
             userStates[chatId].templateTitle = text;
             userStates[chatId].step = 'AWAITING_TEMPLATE_DESCRIPTION';
-            await bot.sendMessage(chatId, 'Введите описание шаблона (или отп��авьте "-" чтобы пропустить):');
+            await bot.sendMessage(chatId, 'Введите описание шаблона (или отправьте "-" чтобы пропустить):');
             break;
 
         case 'AWAITING_TEMPLATE_DESCRIPTION':
@@ -255,31 +263,21 @@ bot.on('message', async (msg) => {
             await bot.sendMessage(
                 chatId,
                 'Выберите приоритет для задач из шаблона:',
-                {
-                    reply_markup: {
-                        keyboard: [
-                            ['🟢 LOW', '🟡 MEDIUM'],
-                            ['🟠 HIGH', '🔴 URGENT']
-                        ],
-                        one_time_keyboard: true
-                    }
-                }
+                PRIORITY_KEYBOARD
             );
             break;
 
         case 'AWAITING_TEMPLATE_PRIORITY':
-            let priority;
-            switch (text) {
-                case '🟢 LOW': priority = 'LOW'; break;
-                case '🟡 MEDIUM': priority = 'MEDIUM'; break;
-                case '🟠 HIGH': priority = 'HIGH'; break;
-                case '🔴 URGENT': priority = 'URGENT'; break;
-                default:
-                    await bot.sendMessage(chatId, '❌ Пожалуйста, выберите приоритет из предложенных вариантов');
-                    return;
+            const templatePriority = PRIORITY_MAP[text];
+            if (!templatePriority) {
+                await bot.sendMessage(
+                    chatId, 
+                    '❌ Пожалуйста, выберите приоритет из предложенных вариантов'
+                );
+                return;
             }
 
-            userStates[chatId].templatePriority = priority;
+            userStates[chatId].templatePriority = templatePriority;
             userStates[chatId].step = 'AWAITING_TEMPLATE_SCHEDULE';
             await bot.sendMessage(
                 chatId, 
@@ -430,7 +428,7 @@ bot.onText(/\/my_projects/, async (msg) => {
     }
 });
 
-// Добавляем команду для установки дедлайна существующей задачи
+// Добавляем команду для установки дедлайна существующ��й задачи
 bot.onText(/\/set_deadline (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const taskId = match[1];
@@ -459,15 +457,7 @@ bot.onText(/\/set_priority (.+)/, async (msg, match) => {
     await bot.sendMessage(
         chatId,
         'Выберите новый приоритет:',
-        {
-            reply_markup: {
-                keyboard: [
-                    ['🟢 LOW', '🟡 MEDIUM'],
-                    ['🟠 HIGH', '🔴 URGENT']
-                ],
-                one_time_keyboard: true
-            }
-        }
+        PRIORITY_KEYBOARD
     );
 });
 
@@ -481,7 +471,7 @@ bot.onText(/\/add_subtask (.+)/, async (msg, match) => {
         taskId: taskId
     };
     
-    await bot.sendMessage(chatId, 'Введите название подзаачи:');
+    await bot.sendMessage(chatId, 'Введите название подзадачи:');
 });
 
 // Добавляем команду для переключения статуса подзадачи
@@ -651,7 +641,7 @@ bot.onText(/\/achievements/, async (msg) => {
             '🏆 Ваши достижения:\n\n' + message
         );
     } catch (error) {
-        await bot.sendMessage(chatId, '❌ Произошла ошибка при получен��и достижений');
+        await bot.sendMessage(chatId, '❌ Произошла ошибка при получении достижений');
     }
 });
 
@@ -800,7 +790,7 @@ bot.onText(/\/report_excel/, async (msg) => {
         // Удаляем временный файл
         fs.unlinkSync(excelPath);
     } catch (error) {
-        await bot.sendMessage(chatId, '❌ Произошла ошибка при генерации Excel от��ета');
+        await bot.sendMessage(chatId, '❌ Произошла ошибка при генерации Excel отчета');
     }
 });
 

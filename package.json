@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "setup": "bash setup.sh",
     "deploy": "bash deploy.sh",
     "logs": "pm2 logs taskmaster",
-    "monitor": "pm2 monit taskmaster"
+    "monitor": "pm2 monit taskmaster",
+    "clean": "bash clean.sh",
+    "setup": "bash server-setup.sh"
   },
   "dependencies": {
     "mongoose": "^6.9.0",
