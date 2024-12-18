@@ -13,7 +13,7 @@ async function startServer() {
         // Синхронизация базы данных
         console.log('Syncing database...');
         logger.info('Syncing database...');
-        await sequelize.sync({ alter: true });
+        await sequelize.sync({ force: true });
         console.log('Database synced');
         logger.info('Database synced');
 
