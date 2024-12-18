@@ -1,3 +1,6 @@
+const { Sequelize } = require('sequelize');
+const config = require('../config/config');
+
 const sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: config.database.path,
@@ -8,7 +11,6 @@ const sequelize = new Sequelize({
         acquire: 30000,
         idle: 10000
     },
-    // Добавим эти настройки
     dialectOptions: {
         timeout: 60000,
         busy_timeout: 60000
