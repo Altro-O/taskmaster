@@ -7,7 +7,6 @@ const ReminderService = require('../services/ReminderService');
 const TemplateController = require('../controllers/TemplateController');
 const AnalyticsService = require('../services/AnalyticsService');
 const GameService = require('../services/GameService');
-const ReportService = require('../services/ReportService');
 const LeaderboardService = require('../services/LeaderboardService');
 const path = require('path');
 const fs = require('fs');
@@ -19,7 +18,6 @@ const gameService = new GameService();
 const leaderboardService = new LeaderboardService();
 const templateController = new TemplateController(taskController);
 const analyticsService = new AnalyticsService();
-const reportService = new ReportService();
 
 // Хранение состояния пользователя
 const userStates = {};
@@ -89,7 +87,7 @@ bot.onText(/\/start/, async (msg) => {
             '/my_rank - Мой рейтинг\n' +
             '/stats - Общая статистика\n' +
             '/project_stats - Статистика по проектам\n' +
-            '/productivity - О��чет о продуктивности\n' +
+            '/productivity - Отчет о продуктивности\n' +
             '/level - Мой уровень и очки\n' +
             '/achievements - Мои достижения\n' +
             '/kanban - Показать Kanban-доску\n' +
@@ -195,7 +193,7 @@ bot.onText(/\/stats/, async (msg) => {
             `В работе: ${stats.byStatus.IN_PROGRESS}\n` +
             `На проверке: ${stats.byStatus.IN_REVIEW}\n` +
             `Ожидают: ${stats.byStatus.TODO}\n\n` +
-            `��роцент выполнения: ${stats.completionRate}%\n` +
+            `Процент выполнения: ${stats.completionRate}%\n` +
             `Просрочено: ${stats.overdue}`;
 
         await bot.sendMessage(chatId, message);
@@ -227,7 +225,7 @@ bot.on('message', async (msg) => {
                 userStates[chatId].step = 'AWAITING_TASK_DEADLINE';
                 await bot.sendMessage(
                     chatId, 
-                    'Введите д��длайн задачи в формате ДД.ММ.ГГГГ (или отправьте "-" чтобы пропустить):'
+                    'Введите ддлайн задачи в формате ДД.ММ.ГГГГ (или отправьте "-" чтобы пропустить):'
                 );
                 break;
 
