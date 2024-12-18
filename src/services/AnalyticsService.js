@@ -1,37 +1,48 @@
 const Task = require('../models/Task');
+const Project = require('../models/Project');
 
 class AnalyticsService {
-    async getTasksStats(userId, startDate = null, endDate = null) {
+    async getTasksStats(userId) {
         try {
-            const query = { userId };
-            if (startDate && endDate) {
-                query.createdAt = { $gte: startDate, $lte: endDate };
-            }
-
-            const tasks = await Task.find(query);
+            const tasks = await Task.find({ userId });
             
-            return {
+            const stats = {
                 total: tasks.length,
                 byStatus: {
-                    TODO: tasks.filter(t => t.status === 'TODO').length,
-                    IN_PROGRESS: tasks.filter(t => t.status === 'IN_PROGRESS').length,
-                    DONE: tasks.filter(t => t.status === 'DONE').length
+                    TODO: 0,
+                    IN_PROGRESS: 0,
+                    IN_REVIEW: 0,
+                    DONE: 0
                 },
                 byPriority: {
-                    LOW: tasks.filter(t => t.priority === 'LOW').length,
-                    MEDIUM: tasks.filter(t => t.priority === 'MEDIUM').length,
-                    HIGH: tasks.filter(t => t.priority === 'HIGH').length,
-                    URGENT: tasks.filter(t => t.priority === 'URGENT').length
+                    LOW: 0,
+                    MEDIUM: 0,
+                    HIGH: 0,
+                    URGENT: 0
                 },
-                completionRate: tasks.length > 0 
-                    ? (tasks.filter(t => t.status === 'DONE').length / tasks.length * 100).toFixed(1)
-                    : 0,
-                overdue: tasks.filter(t => 
-                    t.deadline && 
-                    t.status !== 'DONE' && 
-                    new Date(t.deadline) < new Date()
-                ).length
+                completionRate: 0,
+                overdue: 0
             };
+
+            tasks.forEach(task => {
+                // Подсчет по статусам
+                stats.byStatus[task.status]++;
+                
+                // Подсчет по приоритетам
+                stats.byPriority[task.priority]++;
+                
+                // Подсчет просроченных
+                if (task.deadline && new Date(task.deadline) < new Date() && task.status !== 'DONE') {
+                    stats.overdue++;
+                }
+            });
+
+            // Расчет процента выполнения
+            stats.completionRate = tasks.length > 0 
+                ? Math.round((stats.byStatus.DONE / tasks.length) * 100) 
+                : 0;
+
+            return stats;
         } catch (error) {
             console.error('Error getting tasks stats:', error);
             throw error;
@@ -40,88 +51,60 @@ class AnalyticsService {
 
     async getProjectStats(userId) {
         try {
-            const tasks = await Task.find({ userId }).populate('project');
-            const projectStats = {};
+            const projects = await Project.find({ userId });
+            const stats = [];
 
-            tasks.forEach(task => {
-                if (task.project) {
-                    const projectId = task.project._id.toString();
-                    if (!projectStats[projectId]) {
-                        projectStats[projectId] = {
-                            name: task.project.title,
-                            total: 0,
-                            completed: 0,
-                            inProgress: 0,
-                            todo: 0
-                        };
-                    }
+            for (const project of projects) {
+                const tasks = await Task.find({ project: project._id });
+                stats.push({
+                    name: project.title,
+                    total: tasks.length,
+                    completed: tasks.filter(t => t.status === 'DONE').length,
+                    inProgress: tasks.filter(t => ['IN_PROGRESS', 'IN_REVIEW'].includes(t.status)).length,
+                    todo: tasks.filter(t => t.status === 'TODO').length
+                });
+            }
 
-                    projectStats[projectId].total++;
-                    switch (task.status) {
-                        case 'DONE':
-                            projectStats[projectId].completed++;
-                            break;
-                        case 'IN_PROGRESS':
-                            projectStats[projectId].inProgress++;
-                            break;
-                        case 'TODO':
-                            projectStats[projectId].todo++;
-                            break;
-                    }
-                }
-            });
-
-            return Object.values(projectStats);
+            return stats;
         } catch (error) {
             console.error('Error getting project stats:', error);
             throw error;
         }
     }
 
-    async getProductivityReport(userId, days = 7) {
+    async getProductivityReport(userId) {
         try {
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - days);
+            const days = 7;
+            const report = [];
+            
+            for (let i = 0; i < days; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                date.setHours(0, 0, 0, 0);
+                
+                const nextDate = new Date(date);
+                nextDate.setDate(nextDate.getDate() + 1);
 
-            const tasks = await Task.find({
-                userId,
-                createdAt: { $gte: startDate }
-            }).sort({ createdAt: 1 });
+                const [created, completed] = await Promise.all([
+                    Task.countDocuments({
+                        userId,
+                        createdAt: { $gte: date, $lt: nextDate }
+                    }),
+                    Task.countDocuments({
+                        userId,
+                        status: 'DONE',
+                        updatedAt: { $gte: date, $lt: nextDate }
+                    })
+                ]);
 
-            const dailyStats = {};
-            const daysArray = [];
-
-            // Создаем массив дат
-            for (let i = 0; i <= days; i++) {
-                const date = new Date(startDate);
-                date.setDate(date.getDate() + i);
-                const dateStr = date.toISOString().split('T')[0];
-                dailyStats[dateStr] = {
-                    created: 0,
-                    completed: 0
-                };
-                daysArray.push(dateStr);
+                report.push({
+                    date: date.toLocaleDateString(),
+                    created,
+                    completed
+                });
             }
 
-            // Заполняем статистику
-            tasks.forEach(task => {
-                const createdDate = task.createdAt.toISOString().split('T')[0];
-                if (dailyStats[createdDate]) {
-                    dailyStats[createdDate].created++;
-                }
-
-                if (task.status === 'DONE') {
-                    const completedDate = task.updatedAt.toISOString().split('T')[0];
-                    if (dailyStats[completedDate]) {
-                        dailyStats[completedDate].completed++;
-                    }
-                }
-            });
-
-            return daysArray.map(date => ({
-                date,
-                ...dailyStats[date]
-            }));
+            return report;
         } catch (error) {
             console.error('Error getting productivity report:', error);
             throw error;
