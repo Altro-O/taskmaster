@@ -70,32 +70,32 @@ bot.onText(/\/start/, async (msg) => {
         await gameService.initUserAchievements(chatId.toString());
         
         await bot.sendMessage(chatId, 
-            'Добро пожаловать в TaskMaster! \n\n' +
+            'Добро пожаловать в TaskMaster! 🚀\n\n' +
             'Доступные команды:\n' +
-            '/new_task - Создать новую задачу\n' +
-            '/my_tasks - Посмотреть мои задачи\n' +
-            '/new_project - Создать новый проект\n' +
-            '/my_projects - Посмотреть мои проекты\n' +
-            '/new_template - Создать шаблон задачи\n' +
-            '/my_templates - Посмотреть мои шаблоны\n' +
-            '/create_from_template - Создать задачу из шаблона\n' +
-            '/set_priority - Установить приоритет задачи\n' +
-            '/add_subtask - Добавить подзадачу\n' +
-            '/toggle_subtask - Отметить подзадачу\n' +
-            '/leaderboard - Глобальный рейтинг\n' +
-            '/weekly_top - Топ недели\n' +
-            '/my_rank - Мой рейтинг\n' +
-            '/stats - Общая статистика\n' +
-            '/project_stats - Статистика по проектам\n' +
-            '/productivity - Отчет о продуктивности\n' +
-            '/level - Мой уровень и очки\n' +
-            '/achievements - Мои достижения\n' +
-            '/kanban - Показать Kanban-доску\n' +
-            '/move_task - Переместить задачу\n' +
-            '/chart - График задач\n' +
-            '/report_pdf - Отчет в PDF\n' +
-            '/report_excel - Отчет в Excel\n' +
-            '/help - Помощь'
+            '📝 /new_task - Создать новую задачу\n' +
+            '📋 /my_tasks - Посмотреть мои задачи\n' +
+            '📁 /new_project - Создать новый проект\n' +
+            '📂 /my_projects - Посмотреть мои проекты\n' +
+            '📑 /new_template - Создать шаблон задачи\n' +
+            '📚 /my_templates - Посмотреть мои шаблоны\n' +
+            '✨ /create_from_template - Создать задачу из шаблона\n' +
+            '⭐️ /set_priority - Установить приоритет задачи\n' +
+            '✅ /add_subtask - Добавить подзадачу\n' +
+            '☑️ /toggle_subtask - Отметить подзадачу\n' +
+            '🏆 /leaderboard - Глобальный рейтинг\n' +
+            '📈 /weekly_top - Топ недели\n' +
+            '🎯 /my_rank - Мой рейтинг\n' +
+            '📊 /stats - Общая статистика\n' +
+            '📈 /project_stats - Статистика по проектам\n' +
+            '📉 /productivity - Отчет о продуктивности\n' +
+            '🎮 /level - Мой уровень и очки\n' +
+            '🏅 /achievements - Мои достижения\n' +
+            '📋 /kanban - Показать Kanban-доску\n' +
+            '↔️ /move_task - Переместить задачу\n' +
+            '📊 /chart - График задач\n' +
+            '📄 /report_pdf - Отчет в PDF\n' +
+            '📊 /report_excel - Отчет в Excel\n' +
+            '❓ /help - Помощь'
         );
     } catch (error) {
         console.error('Error in /start command:', error);
@@ -107,7 +107,7 @@ bot.onText(/\/start/, async (msg) => {
 bot.onText(/\/new_task/, async (msg) => {
     const chatId = msg.chat.id;
     userStates[chatId] = { step: 'AWAITING_TASK_TITLE' };
-    await bot.sendMessage(chatId, 'Введите название задачи:');
+    await bot.sendMessage(chatId, '📝 Введите название задачи:');
 });
 
 // Просмотр задач
@@ -123,16 +123,16 @@ bot.onText(/\/my_tasks/, async (msg) => {
         });
 
         if (tasks.length === 0) {
-            await bot.sendMessage(chatId, 'У вас нет активных задач');
+            await bot.sendMessage(chatId, '📭 У вас нет активных задач');
             return;
         }
 
         const tasksMessage = tasks.map(task => 
             `📌 ${task.title}\n` +
-            `Статус: ${task.status}\n` +
-            `Приоритет: ${task.priority}\n` +
-            `${task.deadline ? `Дедлайн: ${new Date(task.deadline).toLocaleDateString()}\n` : ''}` +
-            `ID: ${task.id}\n` +
+            `📊 Статус: ${task.status}\n` +
+            `⭐️ Приоритет: ${task.priority}\n` +
+            `${task.deadline ? `⏰ Дедлайн: ${new Date(task.deadline).toLocaleDateString()}\n` : ''}` +
+            `🔑 ID: ${task.id}\n` +
             `-------------------`
         ).join('\n');
 
@@ -162,12 +162,12 @@ bot.onText(/\/kanban/, async (msg) => {
         let message = '📋 Kanban доска:\n\n';
         
         for (const [status, statusTasks] of Object.entries(board)) {
-            message += `${status}:\n`;
+            message += `📊 ${status}:\n`;
             if (statusTasks.length === 0) {
-                message += 'Нет задач\n';
+                message += '📭 Нет задач\n';
             } else {
                 statusTasks.forEach(task => {
-                    message += `- ${task.title} (${task.priority})\n`;
+                    message += `📌 ${task.title} (${task.priority})\n`;
                 });
             }
             message += '\n';
@@ -188,13 +188,13 @@ bot.onText(/\/stats/, async (msg) => {
         
         const message = 
             '📊 Статистика по задачам:\n\n' +
-            `Всего задач: ${stats.total}\n` +
-            `Выполнено: ${stats.byStatus.DONE}\n` +
-            `В работе: ${stats.byStatus.IN_PROGRESS}\n` +
-            `На проверке: ${stats.byStatus.IN_REVIEW}\n` +
-            `Ожидают: ${stats.byStatus.TODO}\n\n` +
-            `Процент выполнения: ${stats.completionRate}%\n` +
-            `Просрочено: ${stats.overdue}`;
+            `📈 Всего задач: ${stats.total}\n` +
+            `✅ Выполнено: ${stats.byStatus.DONE}\n` +
+            `🔄 В работе: ${stats.byStatus.IN_PROGRESS}\n` +
+            `👀 На проверке: ${stats.byStatus.IN_REVIEW}\n` +
+            `📝 Ожидают: ${stats.byStatus.TODO}\n\n` +
+            `📊 Процент выполнения: ${stats.completionRate}%\n` +
+            `⚠️ Просрочено: ${stats.overdue}`;
 
         await bot.sendMessage(chatId, message);
     } catch (error) {
@@ -217,7 +217,7 @@ bot.on('message', async (msg) => {
             case 'AWAITING_TASK_TITLE':
                 userStates[chatId].taskTitle = text;
                 userStates[chatId].step = 'AWAITING_TASK_DESCRIPTION';
-                await bot.sendMessage(chatId, 'Введите описание задачи (или отправьте "-" чтобы пропустить):');
+                await bot.sendMessage(chatId, '📝 Введите описание задачи (или отправьте "-" чтобы пропустить):');
                 break;
 
             case 'AWAITING_TASK_DESCRIPTION':
@@ -225,7 +225,7 @@ bot.on('message', async (msg) => {
                 userStates[chatId].step = 'AWAITING_TASK_DEADLINE';
                 await bot.sendMessage(
                     chatId, 
-                    'Введите ддлайн задачи в формате ДД.ММ.ГГГГ (или отправьте "-" чтобы пропустить):'
+                    '⏰ Введите дедлайн задачи в формате ДД.ММ.ГГГГ (или отправьте "-" чтобы пропустить):'
                 );
                 break;
 
