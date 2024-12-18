@@ -116,4 +116,4 @@ class AnalyticsService {
     }
 }
 
-module.exports = new AnalyticsService(); 
+module.exports = AnalyticsService; 
