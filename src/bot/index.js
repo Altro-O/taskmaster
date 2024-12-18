@@ -15,6 +15,7 @@ const fs = require('fs');
 const bot = new TelegramBot(config.telegram.token, { polling: true });
 const reminderService = new ReminderService(bot);
 const taskController = new TaskController(reminderService);
+const gameService = new GameService();
 const templateController = new TemplateController(taskController);
 
 // Хранение состояния пользователя
@@ -84,7 +85,7 @@ bot.onText(/\/start/, async (msg) => {
             '/weekly_top - Топ недели\n' +
             '/my_rank - Мой рейтинг\n' +
             '/stats - Общая статистика\n' +
-            '/project_stats - Статистика по проектам\n' +
+            '/project_stats - Стат��стика по проектам\n' +
             '/productivity - Отчет о продуктивности\n' +
             '/level - Мой уровень и очки\n' +
             '/achievements - Мои достижения\n' +

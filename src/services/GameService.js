@@ -163,4 +163,4 @@ class GameService {
     }
 }
 
-module.exports = new GameService(); 
+module.exports = GameService; 
