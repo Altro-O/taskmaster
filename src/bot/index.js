@@ -21,7 +21,7 @@ const templateController = new TemplateController(taskController);
 // Хранение состояния пользователя
 const userStates = {};
 
-// Создаем временную директорию для отчетов
+// Создаем временн��ю директорию для отчетов
 const tempDir = path.join(__dirname, '../../temp');
 if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir);
@@ -66,10 +66,10 @@ bot.onText(/\/start/, async (msg) => {
             }
         });
 
-        await GameService.initUserAchievements(chatId.toString());
+        await gameService.initUserAchievements(chatId.toString());
         
         await bot.sendMessage(chatId, 
-            'Добро пожаловать в TaskMaster! ����\n\n' +
+            'Добро пожаловать в TaskMaster! \n\n' +
             'Доступные команды:\n' +
             '/new_task - Создать новую задачу\n' +
             '/my_tasks - Посмотреть мои задачи\n' +
@@ -85,7 +85,7 @@ bot.onText(/\/start/, async (msg) => {
             '/weekly_top - Топ недели\n' +
             '/my_rank - Мой рейтинг\n' +
             '/stats - Общая статистика\n' +
-            '/project_stats - Стат��стика по проектам\n' +
+            '/project_stats - Статистика по проектам\n' +
             '/productivity - Отчет о продуктивности\n' +
             '/level - Мой уровень и очки\n' +
             '/achievements - Мои достижения\n' +
