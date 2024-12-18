@@ -22,8 +22,8 @@ module.exports = {
         environment: process.env.NODE_ENV || 'development'
     },
     server: {
-        host: process.env.SERVER_HOST || '150.241.83.127',
-        ip: process.env.SERVER_IP || '150.241.83.127'
+        host: '0.0.0.0',
+        ip: '0.0.0.0'
     },
     api: {
         port: process.env.API_PORT || 3000,
