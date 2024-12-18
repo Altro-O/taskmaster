@@ -1,28 +1,45 @@
-const Achievement = require('../models/Achievement');
-const Task = require('../models/Task');
+const { User, Task } = require('../models');
+const { Op } = require('sequelize');
+const logger = require('../utils/logger');
 
 class GameService {
     constructor() {
-        this.achievementLevels = {
-            TASKS_COMPLETED: [5, 20, 50, 100],
-            PROJECTS_COMPLETED: [1, 5, 10, 20],
-            STREAK_DAYS: [3, 7, 14, 30],
-            PRIORITY_MASTER: [5, 15, 30, 50],
-            EARLY_BIRD: [5, 15, 30, 50],
-            SUBTASK_MASTER: [10, 30, 60, 100]
+        this.achievementTypes = {
+            TASKS_COMPLETED: {
+                levels: [5, 20, 50, 100],
+                points: [10, 50, 100, 200]
+            },
+            PRIORITY_MASTER: {
+                levels: [5, 15, 30, 50],
+                points: [20, 60, 120, 200]
+            },
+            EARLY_BIRD: {
+                levels: [5, 15, 30, 50],
+                points: [15, 45, 90, 180]
+            },
+            SUBTASK_MASTER: {
+                levels: [10, 30, 60, 100],
+                points: [10, 30, 60, 100]
+            }
         };
+        logger.info('GameService initialized');
     }
 
     async initUserAchievements(userId) {
         try {
-            const existingAchievements = await Achievement.find({ userId });
-            if (existingAchievements.length === 0) {
-                const achievements = Object.keys(this.achievementLevels).map(type => ({
-                    userId,
-                    type
-                }));
-                await Achievement.insertMany(achievements);
-            }
+            await User.update(
+                {
+                    'stats.achievements': Object.keys(this.achievementTypes).reduce((acc, type) => ({
+                        ...acc,
+                        [type]: {
+                            progress: 0,
+                            level: 0,
+                            points: 0
+                        }
+                    }), {})
+                },
+                { where: { telegramId: userId } }
+            );
         } catch (error) {
             console.error('Error initializing achievements:', error);
             throw error;
@@ -31,15 +48,23 @@ class GameService {
 
     async updateAchievements(userId) {
         try {
-            const tasks = await Task.find({ userId });
-            const achievements = await Achievement.find({ userId });
+            logger.info(`Updating achievements for user ${userId}`);
+            const [user, tasks] = await Promise.all([
+                User.findOne({ where: { telegramId: userId } }),
+                Task.findAll({ where: { UserId: userId } })
+            ]);
 
-            // Обновляем прогресс для каждого типа достижений
-            for (const achievement of achievements) {
+            if (!user) throw new Error('User not found');
+
+            const achievements = user.stats.achievements;
+            let totalPoints = 0;
+
+            // Обновляем каждый тип достижений
+            for (const [type, achievement] of Object.entries(achievements)) {
                 let progress = 0;
-                const levels = this.achievementLevels[achievement.type];
+                const { levels, points } = this.achievementTypes[type];
 
-                switch (achievement.type) {
+                switch (type) {
                     case 'TASKS_COMPLETED':
                         progress = tasks.filter(t => t.status === 'DONE').length;
                         break;
@@ -47,7 +72,7 @@ class GameService {
                     case 'PRIORITY_MASTER':
                         progress = tasks.filter(t => 
                             t.status === 'DONE' && 
-                            (t.priority === 'HIGH' || t.priority === 'URGENT')
+                            ['HIGH', 'URGENT'].includes(t.priority)
                         ).length;
                         break;
 
@@ -55,7 +80,8 @@ class GameService {
                         progress = tasks.filter(t => 
                             t.status === 'DONE' && 
                             t.deadline && 
-                            new Date(t.deadline) > new Date(t.updatedAt)
+                            t.completedAt && 
+                            new Date(t.completedAt) < new Date(t.deadline)
                         ).length;
                         break;
 
@@ -66,59 +92,72 @@ class GameService {
                         break;
                 }
 
-                // Определяем уровень достижения
-                let newLevel = 1;
+                // Определяем новый уровень
+                let newLevel = 0;
                 for (let i = 0; i < levels.length; i++) {
                     if (progress >= levels[i]) {
-                        newLevel = i + 2;
-                    } else {
-                        break;
+                        newLevel = i + 1;
                     }
                 }
 
-                // Обновляем достижение
-                if (newLevel > achievement.level || progress > achievement.progress) {
-                    const wasCompleted = achievement.completed;
-                    const isNowCompleted = newLevel > levels.length;
-
-                    await Achievement.findByIdAndUpdate(achievement._id, {
-                        level: newLevel,
+                // Если достигнут новый уровень, начисляем очки
+                if (newLevel > achievement.level) {
+                    const pointsEarned = points[newLevel - 1];
+                    totalPoints += pointsEarned;
+                    achievements[type] = {
                         progress,
-                        completed: isNowCompleted,
-                        completedAt: isNowCompleted && !wasCompleted ? new Date() : achievement.completedAt
-                    });
+                        level: newLevel,
+                        points: achievement.points + pointsEarned
+                    };
                 }
             }
 
-            return await Achievement.find({ userId });
+            // Обновляем пользователя
+            await User.update(
+                {
+                    'stats.achievements': achievements,
+                    'stats.points': user.stats.points + totalPoints
+                },
+                { where: { telegramId: userId } }
+            );
+
+            logger.info(`Achievements updated successfully for user ${userId}`);
+            return {
+                achievements,
+                pointsEarned: totalPoints
+            };
         } catch (error) {
-            console.error('Error updating achievements:', error);
+            logger.error(`Error updating achievements for user ${userId}`, error);
             throw error;
         }
     }
 
-    async getUserStats(userId) {
+    async getUserLevel(userId) {
         try {
-            const achievements = await Achievement.find({ userId });
-            const totalPoints = achievements.reduce((sum, achievement) => 
-                sum + (achievement.level - 1) * 100 + 
-                (achievement.completed ? 500 : 0), 0
+            const user = await User.findOne({
+                where: { telegramId: userId }
+            });
+
+            if (!user) throw new Error('User not found');
+
+            const points = user.stats.points;
+            const level = Math.floor(Math.sqrt(points / 100)) + 1;
+            const nextLevel = level + 1;
+            const pointsForNextLevel = Math.pow(nextLevel - 1, 2) * 100;
+            const progress = Math.round(
+                ((points - Math.pow(level - 1, 2) * 100) / 
+                (pointsForNextLevel - Math.pow(level - 1, 2) * 100)) * 100
             );
 
-            const completedAchievements = achievements.filter(a => a.completed).length;
-            const totalAchievements = achievements.length;
-
             return {
-                points: totalPoints,
-                level: Math.floor(totalPoints / 1000) + 1,
-                achievements: {
-                    completed: completedAchievements,
-                    total: totalAchievements,
-                    percentage: ((completedAchievements / totalAchievements) * 100).toFixed(1)
-                }
+                level,
+                points,
+                nextLevel,
+                pointsForNextLevel,
+                progress
             };
         } catch (error) {
-            console.error('Error getting user stats:', error);
+            console.error('Error getting user level:', error);
             throw error;
         }
     }

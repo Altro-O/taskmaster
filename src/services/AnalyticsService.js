@@ -1,11 +1,13 @@
-const Task = require('../models/Task');
-const Project = require('../models/Project');
+const { Task, Project, User } = require('../models');
+const { Op, fn, col, literal } = require('sequelize');
 
 class AnalyticsService {
     async getTasksStats(userId) {
         try {
-            const tasks = await Task.find({ userId });
-            
+            const tasks = await Task.findAll({
+                where: { UserId: userId }
+            });
+
             const stats = {
                 total: tasks.length,
                 byStatus: {
@@ -25,21 +27,16 @@ class AnalyticsService {
             };
 
             tasks.forEach(task => {
-                // Подсчет по статусам
                 stats.byStatus[task.status]++;
-                
-                // Подсчет по приоритетам
                 stats.byPriority[task.priority]++;
                 
-                // Подсчет просроченных
                 if (task.deadline && new Date(task.deadline) < new Date() && task.status !== 'DONE') {
                     stats.overdue++;
                 }
             });
 
-            // Расчет процента выполнения
             stats.completionRate = tasks.length > 0 
-                ? Math.round((stats.byStatus.DONE / tasks.length) * 100) 
+                ? Math.round((stats.byStatus.DONE / tasks.length) * 100)
                 : 0;
 
             return stats;
@@ -51,21 +48,18 @@ class AnalyticsService {
 
     async getProjectStats(userId) {
         try {
-            const projects = await Project.find({ userId });
-            const stats = [];
+            const projects = await Project.findAll({
+                where: { UserId: userId },
+                include: [{ model: Task }]
+            });
 
-            for (const project of projects) {
-                const tasks = await Task.find({ project: project._id });
-                stats.push({
-                    name: project.title,
-                    total: tasks.length,
-                    completed: tasks.filter(t => t.status === 'DONE').length,
-                    inProgress: tasks.filter(t => ['IN_PROGRESS', 'IN_REVIEW'].includes(t.status)).length,
-                    todo: tasks.filter(t => t.status === 'TODO').length
-                });
-            }
-
-            return stats;
+            return projects.map(project => ({
+                name: project.title,
+                total: project.Tasks.length,
+                completed: project.Tasks.filter(t => t.status === 'DONE').length,
+                inProgress: project.Tasks.filter(t => ['IN_PROGRESS', 'IN_REVIEW'].includes(t.status)).length,
+                todo: project.Tasks.filter(t => t.status === 'TODO').length
+            }));
         } catch (error) {
             console.error('Error getting project stats:', error);
             throw error;
@@ -86,14 +80,24 @@ class AnalyticsService {
                 nextDate.setDate(nextDate.getDate() + 1);
 
                 const [created, completed] = await Promise.all([
-                    Task.countDocuments({
-                        userId,
-                        createdAt: { $gte: date, $lt: nextDate }
+                    Task.count({
+                        where: {
+                            UserId: userId,
+                            createdAt: {
+                                [Op.gte]: date,
+                                [Op.lt]: nextDate
+                            }
+                        }
                     }),
-                    Task.countDocuments({
-                        userId,
-                        status: 'DONE',
-                        updatedAt: { $gte: date, $lt: nextDate }
+                    Task.count({
+                        where: {
+                            UserId: userId,
+                            status: 'DONE',
+                            updatedAt: {
+                                [Op.gte]: date,
+                                [Op.lt]: nextDate
+                            }
+                        }
                     })
                 ]);
 

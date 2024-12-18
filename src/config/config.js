@@ -1,14 +1,19 @@
 require('dotenv').config();
+const path = require('path');
 
 module.exports = {
+    logging: {
+        level: process.env.LOG_LEVEL || 'info',
+        dir: path.join(__dirname, '../../logs')
+    },
     telegram: {
         token: process.env.TELEGRAM_BOT_TOKEN,
         webhookUrl: process.env.NODE_ENV === 'production' 
             ? `https://${process.env.DOMAIN}/webhook/${process.env.TELEGRAM_BOT_TOKEN}`
             : null
     },
-    mongodb: {
-        uri: process.env.MONGODB_URI
+    database: {
+        path: process.env.DATABASE_PATH || path.join(__dirname, '../../database.sqlite')
     },
     app: {
         name: 'TaskMaster',

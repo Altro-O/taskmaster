@@ -1,46 +1,45 @@
-const Achievement = require('../models/Achievement');
-const Task = require('../models/Task');
+const { User, Task } = require('../models');
+const { Op, fn, col, literal } = require('sequelize');
 
 class LeaderboardService {
     async getGlobalLeaderboard(limit = 10) {
         try {
-            // Получаем статистику всех пользователей
-            const users = await Achievement.aggregate([
-                {
-                    $group: {
-                        _id: '$userId',
-                        totalPoints: {
-                            $sum: {
-                                $add: [
-                                    { $multiply: [{ $subtract: ['$level', 1] }, 100] },
-                                    { $cond: [{ $eq: ['$completed', true] }, 500, 0] }
-                                ]
-                            }
-                        },
-                        completedAchievements: {
-                            $sum: { $cond: [{ $eq: ['$completed', true] }, 1, 0] }
-                        }
-                    }
-                },
-                {
-                    $sort: { totalPoints: -1 }
-                },
-                {
-                    $limit: limit
-                }
-            ]);
+            const users = await User.findAll({
+                attributes: [
+                    'id',
+                    'telegramId',
+                    'stats',
+                    [fn('COUNT', col('Tasks.id')), 'totalTasks'],
+                    [
+                        fn('COUNT', 
+                            literal('CASE WHEN Tasks.status = \'DONE\' THEN 1 END')
+                        ), 
+                        'tasksCompleted'
+                    ]
+                ],
+                include: [{
+                    model: Task,
+                    attributes: []
+                }],
+                group: ['User.id'],
+                order: [
+                    [col('stats.points'), 'DESC']
+                ],
+                limit
+            });
 
-            // Добавляем статистику по задачам
-            for (let user of users) {
-                const tasks = await Task.find({ userId: user._id });
-                user.tasksCompleted = tasks.filter(t => t.status === 'DONE').length;
-                user.totalTasks = tasks.length;
-                user.completionRate = tasks.length > 0 
-                    ? ((tasks.filter(t => t.status === 'DONE').length / tasks.length) * 100).toFixed(1)
-                    : 0;
-            }
-
-            return users;
+            return users.map(user => ({
+                _id: user.telegramId,
+                totalPoints: user.stats.points,
+                completedAchievements: Object.values(user.stats.achievements)
+                    .filter(a => a.level > 0).length,
+                tasksCompleted: parseInt(user.get('tasksCompleted')),
+                totalTasks: parseInt(user.get('totalTasks')),
+                completionRate: Math.round(
+                    (parseInt(user.get('tasksCompleted')) / 
+                    parseInt(user.get('totalTasks'))) * 100 || 0
+                )
+            }));
         } catch (error) {
             console.error('Error getting global leaderboard:', error);
             throw error;
@@ -52,42 +51,41 @@ class LeaderboardService {
             const weekAgo = new Date();
             weekAgo.setDate(weekAgo.getDate() - 7);
 
-            // Получаем статистику по выполненным задачам за неделю
-            const users = await Task.aggregate([
-                {
-                    $match: {
-                        updatedAt: { $gte: weekAgo },
-                        status: 'DONE'
-                    }
-                },
-                {
-                    $group: {
-                        _id: '$userId',
-                        completedTasks: { $sum: 1 },
-                        totalPoints: {
-                            $sum: {
-                                $switch: {
-                                    branches: [
-                                        { case: { $eq: ['$priority', 'URGENT'] }, then: 100 },
-                                        { case: { $eq: ['$priority', 'HIGH'] }, then: 75 },
-                                        { case: { $eq: ['$priority', 'MEDIUM'] }, then: 50 },
-                                        { case: { $eq: ['$priority', 'LOW'] }, then: 25 }
-                                    ],
-                                    default: 0
-                                }
-                            }
+            const users = await User.findAll({
+                attributes: [
+                    'id',
+                    'telegramId',
+                    'stats',
+                    [
+                        fn('COUNT', 
+                            literal(`CASE WHEN Tasks.status = 'DONE' AND Tasks.updatedAt >= :weekAgo THEN 1 END`)
+                        ),
+                        'completedTasks'
+                    ]
+                ],
+                include: [{
+                    model: Task,
+                    attributes: [],
+                    where: {
+                        updatedAt: {
+                            [Op.gte]: weekAgo
                         }
-                    }
-                },
-                {
-                    $sort: { totalPoints: -1 }
-                },
-                {
-                    $limit: limit
-                }
-            ]);
+                    },
+                    required: false
+                }],
+                group: ['User.id'],
+                order: [
+                    [literal('completedTasks'), 'DESC']
+                ],
+                limit,
+                replacements: { weekAgo }
+            });
 
-            return users;
+            return users.map(user => ({
+                _id: user.telegramId,
+                completedTasks: parseInt(user.get('completedTasks')) || 0,
+                totalPoints: user.stats.points
+            }));
         } catch (error) {
             console.error('Error getting weekly leaderboard:', error);
             throw error;
@@ -96,15 +94,38 @@ class LeaderboardService {
 
     async getUserRank(userId) {
         try {
-            const allUsers = await this.getGlobalLeaderboard(1000); // Получаем большой список
-            const userIndex = allUsers.findIndex(u => u._id === userId);
-            
+            const allUsers = await User.findAll({
+                attributes: [
+                    'id',
+                    'telegramId',
+                    'stats',
+                    [fn('COUNT', col('Tasks.id')), 'totalTasks'],
+                    [
+                        fn('COUNT', 
+                            literal('CASE WHEN Tasks.status = \'DONE\' THEN 1 END')
+                        ),
+                        'tasksCompleted'
+                    ]
+                ],
+                include: [{
+                    model: Task,
+                    attributes: []
+                }],
+                group: ['User.id'],
+                order: [[col('stats.points'), 'DESC']]
+            });
+
+            const userIndex = allUsers.findIndex(u => u.telegramId === userId);
             if (userIndex === -1) return null;
 
+            const totalUsers = allUsers.length;
+            const rank = userIndex + 1;
+            const percentile = Math.round(((totalUsers - rank) / totalUsers) * 100);
+
             return {
-                rank: userIndex + 1,
-                totalUsers: allUsers.length,
-                percentile: ((allUsers.length - userIndex) / allUsers.length * 100).toFixed(1)
+                rank,
+                totalUsers,
+                percentile
             };
         } catch (error) {
             console.error('Error getting user rank:', error);

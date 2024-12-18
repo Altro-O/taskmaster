@@ -1,46 +1,35 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../database');
+const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
+const User = sequelize.define('User', {
+    telegramId: {
+        type: DataTypes.STRING,
         unique: true
     },
-    password: {
-        type: String,
-        required: true
-    },
-    telegramId: {
-        type: String,
-        unique: true,
-        sparse: true
-    },
-    webAccess: {
-        type: Boolean,
-        default: false
-    },
-    telegramAccess: {
-        type: Boolean,
-        default: false
-    },
+    username: DataTypes.STRING,
+    password: DataTypes.STRING,
     settings: {
-        notifications: {
-            email: { type: Boolean, default: true },
-            telegram: { type: Boolean, default: true }
-        },
-        theme: {
-            type: String,
-            enum: ['light', 'dark'],
-            default: 'light'
+        type: DataTypes.JSON,
+        defaultValue: {
+            notifications: true,
+            theme: 'light'
         }
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    lastLogin: {
-        type: Date
+    stats: {
+        type: DataTypes.JSON,
+        defaultValue: {
+            tasksCompleted: 0,
+            totalTasks: 0,
+            points: 0
+        }
     }
 });
 
-module.exports = mongoose.model('User', userSchema); 
+User.beforeCreate(async (user) => {
+    if (user.password) {
+        user.password = await bcrypt.hash(user.password, 10);
+    }
+});
+
+module.exports = User; 

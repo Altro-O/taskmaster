@@ -1,34 +1,59 @@
-const schedule = require('node-schedule');
+const { Task, User } = require('../models');
+const { Op } = require('sequelize');
 
 class ReminderService {
     constructor(bot) {
         this.bot = bot;
-        this.jobs = new Map();
+        this.checkDeadlines();
     }
 
-    scheduleReminder(taskId, userId, message, date) {
-        // Отменяем существующее напоминание если есть
-        if (this.jobs.has(taskId)) {
-            this.jobs.get(taskId).cancel();
+    async checkDeadlines() {
+        try {
+            // Проверяем каждый час
+            setInterval(async () => {
+                const tasks = await Task.findAll({
+                    where: {
+                        deadline: {
+                            [Op.lte]: new Date(Date.now() + 24 * 60 * 60 * 1000), // следующие 24 часа
+                            [Op.gte]: new Date()
+                        },
+                        status: {
+                            [Op.ne]: 'DONE'
+                        }
+                    },
+                    include: [{ 
+                        model: User,
+                        where: {
+                            'settings.notifications': true
+                        }
+                    }]
+                });
+
+                for (const task of tasks) {
+                    const timeLeft = task.deadline - new Date();
+                    if (timeLeft <= 60 * 60 * 1000) { // меньше часа
+                        await this.sendReminder(task, 'через час');
+                    } else if (timeLeft <= 24 * 60 * 60 * 1000) { // меньше суток
+                        await this.sendReminder(task, 'завтра');
+                    }
+                }
+            }, 60 * 60 * 1000); // каждый час
+        } catch (error) {
+            console.error('Error checking deadlines:', error);
         }
-
-        // Планируем новое напоминание
-        const job = schedule.scheduleJob(date, async () => {
-            try {
-                await this.bot.sendMessage(userId, `⏰ Напоминание: ${message}`);
-                this.jobs.delete(taskId);
-            } catch (error) {
-                console.error('Error sending reminder:', error);
-            }
-        });
-
-        this.jobs.set(taskId, job);
     }
 
-    cancelReminder(taskId) {
-        if (this.jobs.has(taskId)) {
-            this.jobs.get(taskId).cancel();
-            this.jobs.delete(taskId);
+    async sendReminder(task, timeFrame) {
+        try {
+            const message = 
+                `⚠️ Напоминание о задаче\n\n` +
+                `Задача "${task.title}" должна быть выполнена ${timeFrame}\n` +
+                `Приоритет: ${task.priority}\n` +
+                `Статус: ${task.status}`;
+
+            await this.bot.sendMessage(task.User.telegramId, message);
+        } catch (error) {
+            console.error('Error sending reminder:', error);
         }
     }
 }

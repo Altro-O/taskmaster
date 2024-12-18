@@ -1,23 +1,21 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../database');
 
-const templateSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
-    title: { type: String, required: true },
-    description: String,
+const Template = sequelize.define('Template', {
+    title: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    description: DataTypes.TEXT,
     priority: {
-        type: String,
-        enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'],
-        default: 'MEDIUM'
+        type: DataTypes.ENUM('LOW', 'MEDIUM', 'HIGH', 'URGENT'),
+        defaultValue: 'MEDIUM'
     },
-    project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
-    schedule: {
-        type: String,  // Cron-формат для автоматического создания
-        default: null
-    },
-    subtasks: [{
-        title: { type: String, required: true }
-    }],
-    createdAt: { type: Date, default: Date.now }
+    schedule: DataTypes.STRING,
+    subtasks: {
+        type: DataTypes.JSON,
+        defaultValue: []
+    }
 });
 
-module.exports = mongoose.model('Template', templateSchema); 
+module.exports = Template; 

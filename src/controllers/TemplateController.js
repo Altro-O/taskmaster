@@ -1,103 +1,115 @@
-const Template = require('../models/Template');
-const TaskController = require('./TaskController');
-const schedule = require('node-schedule');
+const { Template, Task, User } = require('../models');
+const { Op } = require('sequelize');
+const logger = require('../utils/logger');
+const ErrorHandler = require('../utils/errorHandler');
 
 class TemplateController {
     constructor(taskController) {
         this.taskController = taskController;
-        this.scheduledJobs = new Map();
+        logger.info('TemplateController initialized');
     }
 
     async createTemplate(userId, title, description = '', priority = 'MEDIUM', projectId = null, schedule = null) {
         try {
-            const template = new Template({
-                userId,
+            logger.info(`Creating template for user ${userId}`);
+            const template = await Template.create({
                 title,
                 description,
                 priority,
-                project: projectId,
-                schedule
+                schedule,
+                UserId: userId,
+                ProjectId: projectId
             });
-            const savedTemplate = await template.save();
-
-            // Если указано расписание, настраиваем автоматическое создание задач
-            if (schedule) {
-                this.scheduleTaskCreation(savedTemplate);
-            }
-
-            return savedTemplate;
+            logger.info(`Template created successfully: ${template.id}`);
+            return template;
         } catch (error) {
-            console.error('Error creating template:', error);
+            logger.error(`Error creating template for user ${userId}`, error);
             throw error;
         }
     }
 
     async getUserTemplates(userId) {
         try {
-            return await Template.find({ userId }).sort({ createdAt: -1 });
+            return await Template.findAll({
+                where: { UserId: userId },
+                order: [['createdAt', 'DESC']]
+            });
         } catch (error) {
-            console.error('Error getting user templates:', error);
+            console.error('Error getting templates:', error);
+            throw error;
+        }
+    }
+
+    async updateTemplate(templateId, userId, updates) {
+        try {
+            const [updated] = await Template.update(updates, {
+                where: { id: templateId, UserId: userId },
+                returning: true
+            });
+
+            if (!updated) throw new Error('Template not found');
+
+            return await Template.findOne({
+                where: { id: templateId, UserId: userId }
+            });
+        } catch (error) {
+            console.error('Error updating template:', error);
+            throw error;
+        }
+    }
+
+    async deleteTemplate(templateId, userId) {
+        try {
+            const result = await Template.destroy({
+                where: { id: templateId, UserId: userId }
+            });
+            return result > 0;
+        } catch (error) {
+            console.error('Error deleting template:', error);
             throw error;
         }
     }
 
     async createTaskFromTemplate(templateId, userId) {
         try {
-            const template = await Template.findOne({ _id: templateId, userId });
-            if (!template) return null;
+            const template = await Template.findOne({
+                where: { id: templateId, UserId: userId }
+            });
 
-            const task = await this.taskController.createTask(
-                userId,
-                template.title,
-                template.description,
-                null, // дедлайн устанавливается отдельно
-                template.project,
-                template.priority
-            );
+            if (!template) throw new Error('Template not found');
 
-            // Добавляем подзадачи из шаблона
-            if (template.subtasks && template.subtasks.length > 0) {
-                for (const subtask of template.subtasks) {
-                    await this.taskController.addSubtask(task._id, userId, subtask.title);
-                }
-            }
+            const taskData = {
+                title: template.title,
+                description: template.description,
+                priority: template.priority,
+                subtasks: template.subtasks,
+                ProjectId: template.ProjectId
+            };
 
-            return task;
+            return await this.taskController.createTask(userId, taskData);
         } catch (error) {
             console.error('Error creating task from template:', error);
             throw error;
         }
     }
 
-    scheduleTaskCreation(template) {
-        // Отменяем существующее расписание если есть
-        if (this.scheduledJobs.has(template._id.toString())) {
-            this.scheduledJobs.get(template._id.toString()).cancel();
-        }
-
-        // Создаем новое расписание
-        const job = schedule.scheduleJob(template.schedule, async () => {
-            try {
-                await this.createTaskFromTemplate(template._id, template.userId);
-            } catch (error) {
-                console.error('Error in scheduled task creation:', error);
-            }
-        });
-
-        this.scheduledJobs.set(template._id.toString(), job);
-    }
-
-    async deleteTemplate(templateId, userId) {
+    async scheduleTask(templateId, userId, schedule) {
         try {
-            // Отменяем расписание если есть
-            if (this.scheduledJobs.has(templateId)) {
-                this.scheduledJobs.get(templateId).cancel();
-                this.scheduledJobs.delete(templateId);
-            }
+            const [updated] = await Template.update(
+                { schedule },
+                {
+                    where: { id: templateId, UserId: userId },
+                    returning: true
+                }
+            );
 
-            return await Template.findOneAndDelete({ _id: templateId, userId });
+            if (!updated) throw new Error('Template not found');
+
+            return await Template.findOne({
+                where: { id: templateId, UserId: userId }
+            });
         } catch (error) {
-            console.error('Error deleting template:', error);
+            console.error('Error scheduling template:', error);
             throw error;
         }
     }

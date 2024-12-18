@@ -1,17 +1,37 @@
-const Project = require('../models/Project');
+const { Project, Task, User } = require('../models');
+const { Op } = require('sequelize');
 
 class ProjectController {
     async createProject(userId, title, description = '', parentId = null) {
         try {
-            const project = new Project({
-                userId,
+            const project = await Project.create({
                 title,
                 description,
-                parent: parentId
+                parent: parentId,
+                UserId: userId
             });
-            return await project.save();
+
+            return project;
         } catch (error) {
             console.error('Error creating project:', error);
+            throw error;
+        }
+    }
+
+    async getUserProjects(userId) {
+        try {
+            return await Project.findAll({
+                where: { UserId: userId },
+                include: [
+                    {
+                        model: Task,
+                        attributes: ['id', 'status']
+                    }
+                ],
+                order: [['createdAt', 'DESC']]
+            });
+        } catch (error) {
+            console.error('Error getting projects:', error);
             throw error;
         }
     }
@@ -19,52 +39,65 @@ class ProjectController {
     async getProjectHierarchy(userId) {
         try {
             // Получаем все проекты пользователя
-            const projects = await Project.find({ userId })
-                .populate('subprojects')
-                .sort({ createdAt: -1 });
+            const projects = await Project.findAll({
+                where: { 
+                    UserId: userId,
+                    parent: null // Только корневые проекты
+                },
+                include: [
+                    {
+                        model: Project,
+                        as: 'subprojects',
+                        include: [{ model: Task }]
+                    },
+                    { model: Task }
+                ],
+                order: [['createdAt', 'DESC']]
+            });
 
-            // Строим дерево проектов
-            const rootProjects = projects.filter(p => !p.parent);
-            const projectTree = rootProjects.map(project => 
-                this.buildProjectTree(project, projects)
-            );
-
-            return projectTree;
+            return projects;
         } catch (error) {
             console.error('Error getting project hierarchy:', error);
             throw error;
         }
     }
 
-    buildProjectTree(project, allProjects) {
-        const subprojects = allProjects
-            .filter(p => p.parent && p.parent.toString() === project._id.toString())
-            .map(subproject => this.buildProjectTree(subproject, allProjects));
-
-        return {
-            ...project.toObject(),
-            subprojects
-        };
-    }
-
     async moveProject(projectId, userId, newParentId) {
         try {
-            // Проверяем, что новый родитель существует и принадлежит пользователю
             if (newParentId) {
                 const parentProject = await Project.findOne({
-                    _id: newParentId,
-                    userId
+                    where: { 
+                        id: newParentId,
+                        UserId: userId
+                    }
                 });
+
                 if (!parentProject) {
                     throw new Error('Parent project not found');
                 }
             }
 
-            return await Project.findOneAndUpdate(
-                { _id: projectId, userId },
+            const [updated] = await Project.update(
                 { parent: newParentId },
-                { new: true }
+                { 
+                    where: { id: projectId, UserId: userId },
+                    returning: true
+                }
             );
+
+            if (!updated) throw new Error('Project not found');
+
+            return await Project.findOne({
+                where: { id: projectId, UserId: userId },
+                include: [
+                    {
+                        model: Project,
+                        as: 'subprojects',
+                        include: [{ model: Task }]
+                    },
+                    { model: Task }
+                ]
+            });
         } catch (error) {
             console.error('Error moving project:', error);
             throw error;
@@ -74,20 +107,44 @@ class ProjectController {
     async getProjectPath(projectId, userId) {
         try {
             const path = [];
-            let currentProject = await Project.findOne({ _id: projectId, userId });
+            let currentProject = await Project.findOne({
+                where: { id: projectId, UserId: userId }
+            });
 
             while (currentProject) {
                 path.unshift(currentProject);
                 if (!currentProject.parent) break;
+                
                 currentProject = await Project.findOne({
-                    _id: currentProject.parent,
-                    userId
+                    where: { 
+                        id: currentProject.parent,
+                        UserId: userId
+                    }
                 });
             }
 
             return path;
         } catch (error) {
             console.error('Error getting project path:', error);
+            throw error;
+        }
+    }
+
+    async deleteProject(projectId, userId) {
+        try {
+            // Удаляем все задачи проекта
+            await Task.destroy({
+                where: { ProjectId: projectId }
+            });
+
+            // Удаляем сам проект
+            const result = await Project.destroy({
+                where: { id: projectId, UserId: userId }
+            });
+
+            return result > 0;
+        } catch (error) {
+            console.error('Error deleting project:', error);
             throw error;
         }
     }

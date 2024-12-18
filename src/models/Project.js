@@ -1,28 +1,19 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../database');
 
-const projectSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
-    title: { type: String, required: true },
-    description: String,
-    parent: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
-    status: {
-        type: String,
-        enum: ['ACTIVE', 'COMPLETED', 'ARCHIVED'],
-        default: 'ACTIVE'
+const Project = sequelize.define('Project', {
+    title: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    description: DataTypes.TEXT,
+    parent: {
+        type: DataTypes.INTEGER,
+        references: {
+            model: 'Projects',
+            key: 'id'
+        }
+    }
 });
 
-projectSchema.pre('save', function(next) {
-    this.updatedAt = new Date();
-    next();
-});
-
-projectSchema.virtual('subprojects', {
-    ref: 'Project',
-    localField: '_id',
-    foreignField: 'parent'
-});
-
-module.exports = mongoose.model('Project', projectSchema); 
+module.exports = Project; 

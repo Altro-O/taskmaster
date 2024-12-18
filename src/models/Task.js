@@ -1,46 +1,26 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../database');
 
-const taskSchema = new mongoose.Schema({
-    userId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User',
-        required: true 
+const Task = sequelize.define('Task', {
+    title: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
-    telegramChatId: { 
-        type: String,
-        sparse: true
-    },
-    source: {
-        type: String,
-        enum: ['web', 'telegram'],
-        required: true
-    },
-    title: { type: String, required: true },
-    description: String,
+    description: DataTypes.TEXT,
     status: {
-        type: String,
-        enum: ['BACKLOG', 'TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'],
-        default: 'BACKLOG'
+        type: DataTypes.ENUM('TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'),
+        defaultValue: 'TODO'
     },
     priority: {
-        type: String,
-        enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'],
-        default: 'MEDIUM'
+        type: DataTypes.ENUM('LOW', 'MEDIUM', 'HIGH', 'URGENT'),
+        defaultValue: 'MEDIUM'
     },
-    deadline: Date,
-    project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
-    subtasks: [{
-        title: { type: String, required: true },
-        completed: { type: Boolean, default: false }
-    }],
-    column: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    deadline: DataTypes.DATE,
+    completedAt: DataTypes.DATE,
+    subtasks: {
+        type: DataTypes.JSON,
+        defaultValue: []
+    }
 });
 
-taskSchema.pre('save', function(next) {
-    this.updatedAt = new Date();
-    next();
-});
-
-module.exports = mongoose.model('Task', taskSchema); 
+module.exports = Task; 

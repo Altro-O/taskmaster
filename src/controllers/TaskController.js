@@ -1,216 +1,148 @@
-const Task = require('../models/Task');
+const { Task, User, Project } = require('../models');
+const { Op } = require('sequelize');
 
 class TaskController {
     constructor(reminderService) {
         this.reminderService = reminderService;
     }
 
-    async createTask(userId, title, description = '', deadline = null, projectId = null) {
+    async createTask(userId, data) {
         try {
-            const task = new Task({
-                userId,
-                title,
-                description,
-                deadline,
-                project: projectId
+            const task = await Task.create({
+                ...data,
+                UserId: userId,
+                status: 'TODO'
             });
-            const savedTask = await task.save();
 
-            // Если установлен дедлайн, создаем напоминание за день до дедлайна
-            if (deadline) {
-                const reminderDate = new Date(deadline);
-                reminderDate.setDate(reminderDate.getDate() - 1);
-                
-                if (reminderDate > new Date()) {
-                    this.reminderService.scheduleReminder(
-                        savedTask._id,
-                        userId,
-                        `Завтра дедлайн задачи "${title}"!`,
-                        reminderDate
-                    );
-                }
+            if (data.projectId) {
+                await task.setProject(data.projectId);
             }
 
-            return savedTask;
+            await User.increment(
+                { 'stats.totalTasks': 1 },
+                { where: { id: userId } }
+            );
+
+            return task;
         } catch (error) {
             console.error('Error creating task:', error);
             throw error;
         }
     }
 
-    async getUserTasks(userId) {
+    async getUserTasks(userId, filters = {}) {
         try {
-            return await Task.find({ userId }).sort({ createdAt: -1 });
+            const where = { UserId: userId };
+
+            if (filters.status) where.status = filters.status;
+            if (filters.priority) where.priority = filters.priority;
+            if (filters.projectId) where.ProjectId = filters.projectId;
+
+            return await Task.findAll({
+                where,
+                include: [{ model: Project, attributes: ['id', 'title'] }],
+                order: [['createdAt', 'DESC']]
+            });
         } catch (error) {
-            console.error('Error getting user tasks:', error);
+            console.error('Error getting tasks:', error);
             throw error;
         }
     }
 
-    async updateTaskStatus(taskId, status) {
+    async updateTask(taskId, userId, updates) {
         try {
-            return await Task.findByIdAndUpdate(
-                taskId,
-                { status },
-                { new: true }
-            );
-        } catch (error) {
-            console.error('Error updating task status:', error);
-            throw error;
-        }
-    }
+            const [updated] = await Task.update(updates, {
+                where: { id: taskId, UserId: userId },
+                returning: true
+            });
 
-    async getTasksByProject(userId, projectId) {
-        try {
-            return await Task.find({ userId, project: projectId }).sort({ createdAt: -1 });
-        } catch (error) {
-            console.error('Error getting project tasks:', error);
-            throw error;
-        }
-    }
+            if (!updated) throw new Error('Task not found');
 
-    async updateDeadline(taskId, userId, deadline) {
-        try {
-            const task = await Task.findOneAndUpdate(
-                { _id: taskId, userId },
-                { deadline },
-                { new: true }
-            );
+            const task = await Task.findOne({
+                where: { id: taskId, UserId: userId }
+            });
 
-            if (task && deadline) {
-                const reminderDate = new Date(deadline);
-                reminderDate.setDate(reminderDate.getDate() - 1);
-                
-                if (reminderDate > new Date()) {
-                    this.reminderService.scheduleReminder(
-                        task._id,
-                        userId,
-                        `Завтра дедлайн задачи "${task.title}"!`,
-                        reminderDate
-                    );
-                }
+            if (updates.status === 'DONE' && task.status !== 'DONE') {
+                await User.increment(
+                    { 'stats.tasksCompleted': 1 },
+                    { where: { id: userId } }
+                );
+                task.completedAt = new Date();
+                await task.save();
             }
 
             return task;
         } catch (error) {
-            console.error('Error updating task deadline:', error);
-            throw error;
-        }
-    }
-
-    async updatePriority(taskId, userId, priority) {
-        try {
-            return await Task.findOneAndUpdate(
-                { _id: taskId, userId },
-                { priority },
-                { new: true }
-            );
-        } catch (error) {
-            console.error('Error updating task priority:', error);
-            throw error;
-        }
-    }
-
-    async addSubtask(taskId, userId, subtaskTitle) {
-        try {
-            return await Task.findOneAndUpdate(
-                { _id: taskId, userId },
-                { $push: { subtasks: { title: subtaskTitle } } },
-                { new: true }
-            );
-        } catch (error) {
-            console.error('Error adding subtask:', error);
-            throw error;
-        }
-    }
-
-    async toggleSubtask(taskId, userId, subtaskId) {
-        try {
-            const task = await Task.findOne({ _id: taskId, userId });
-            if (!task) return null;
-
-            const subtask = task.subtasks.id(subtaskId);
-            if (!subtask) return null;
-
-            subtask.completed = !subtask.completed;
-            return await task.save();
-        } catch (error) {
-            console.error('Error toggling subtask:', error);
-            throw error;
-        }
-    }
-
-    async deleteSubtask(taskId, userId, subtaskId) {
-        try {
-            return await Task.findOneAndUpdate(
-                { _id: taskId, userId },
-                { $pull: { subtasks: { _id: subtaskId } } },
-                { new: true }
-            );
-        } catch (error) {
-            console.error('Error deleting subtask:', error);
-            throw error;
-        }
-    }
-
-    async moveTask(taskId, userId, newStatus) {
-        try {
-            const task = await Task.findOneAndUpdate(
-                { _id: taskId, userId },
-                { 
-                    status: newStatus,
-                    updatedAt: new Date()
-                },
-                { new: true }
-            );
-
-            if (task && task.deadline && newStatus === 'DONE') {
-                // Отменяем напоминание если задача завершена
-                this.reminderService.cancelReminder(taskId);
-            }
-
-            return task;
-        } catch (error) {
-            console.error('Error moving task:', error);
+            console.error('Error updating task:', error);
             throw error;
         }
     }
 
     async getKanbanBoard(userId) {
         try {
-            const tasks = await Task.find({ userId }).sort({ column: 1 });
-            
-            // Группируем задачи по статусам
-            const board = {
-                BACKLOG: tasks.filter(t => t.status === 'BACKLOG'),
+            const tasks = await Task.findAll({
+                where: { UserId: userId },
+                include: [{ model: Project, attributes: ['id', 'title'] }],
+                order: [['updatedAt', 'DESC']]
+            });
+
+            return {
                 TODO: tasks.filter(t => t.status === 'TODO'),
                 IN_PROGRESS: tasks.filter(t => t.status === 'IN_PROGRESS'),
                 IN_REVIEW: tasks.filter(t => t.status === 'IN_REVIEW'),
                 DONE: tasks.filter(t => t.status === 'DONE')
             };
-
-            return board;
         } catch (error) {
             console.error('Error getting kanban board:', error);
             throw error;
         }
     }
 
-    async reorderTasks(userId, status, taskIds) {
+    async updateSubtasks(taskId, userId, subtasks) {
         try {
-            // Обновляем позиции задач в колонке
-            for (let i = 0; i < taskIds.length; i++) {
-                await Task.findOneAndUpdate(
-                    { _id: taskIds[i], userId },
-                    { column: i }
-                );
-            }
-            return true;
+            const [updated] = await Task.update(
+                { subtasks },
+                { 
+                    where: { id: taskId, UserId: userId },
+                    returning: true
+                }
+            );
+
+            if (!updated) throw new Error('Task not found');
+
+            return await Task.findOne({
+                where: { id: taskId, UserId: userId }
+            });
         } catch (error) {
-            console.error('Error reordering tasks:', error);
+            console.error('Error updating subtasks:', error);
+            throw error;
+        }
+    }
+
+    async getTasksByDeadline(userId, days = 7) {
+        try {
+            const deadline = new Date();
+            deadline.setDate(deadline.getDate() + days);
+
+            return await Task.findAll({
+                where: {
+                    UserId: userId,
+                    deadline: {
+                        [Op.lte]: deadline,
+                        [Op.gte]: new Date()
+                    },
+                    status: {
+                        [Op.ne]: 'DONE'
+                    }
+                },
+                order: [['deadline', 'ASC']],
+                include: [{ model: Project, attributes: ['id', 'title'] }]
+            });
+        } catch (error) {
+            console.error('Error getting tasks by deadline:', error);
             throw error;
         }
     }
 }
 
-module.exports = TaskController; 
+module.exports = new TaskController(); 
