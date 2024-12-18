@@ -86,8 +86,8 @@ li:hover {
 }
 
 .logo {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: auto;
     margin-bottom: 20px;
 }
 
