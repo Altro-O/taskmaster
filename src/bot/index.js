@@ -18,6 +18,8 @@ const taskController = new TaskController(reminderService);
 const gameService = new GameService();
 const leaderboardService = new LeaderboardService();
 const templateController = new TemplateController(taskController);
+const analyticsService = new AnalyticsService();
+const reportService = new ReportService();
 
 // Хранение состояния пользователя
 const userStates = {};
@@ -87,7 +89,7 @@ bot.onText(/\/start/, async (msg) => {
             '/my_rank - Мой рейтинг\n' +
             '/stats - Общая статистика\n' +
             '/project_stats - Статистика по проектам\n' +
-            '/productivity - Отчет о продуктивности\n' +
+            '/productivity - О��чет о продуктивности\n' +
             '/level - Мой уровень и очки\n' +
             '/achievements - Мои достижения\n' +
             '/kanban - Показать Kanban-доску\n' +
@@ -123,7 +125,7 @@ bot.onText(/\/my_tasks/, async (msg) => {
         });
 
         if (tasks.length === 0) {
-            await bot.sendMessage(chatId, 'У вас н��т активных задач');
+            await bot.sendMessage(chatId, 'У вас нет активных задач');
             return;
         }
 
@@ -184,7 +186,7 @@ bot.onText(/\/kanban/, async (msg) => {
 bot.onText(/\/stats/, async (msg) => {
     const chatId = msg.chat.id;
     try {
-        const stats = await AnalyticsService.getTasksStats(chatId.toString());
+        const stats = await analyticsService.getTasksStats(chatId.toString());
         
         const message = 
             '📊 Статистика по задачам:\n\n' +
@@ -193,7 +195,7 @@ bot.onText(/\/stats/, async (msg) => {
             `В работе: ${stats.byStatus.IN_PROGRESS}\n` +
             `На проверке: ${stats.byStatus.IN_REVIEW}\n` +
             `Ожидают: ${stats.byStatus.TODO}\n\n` +
-            `Процент выполнения: ${stats.completionRate}%\n` +
+            `��роцент выполнения: ${stats.completionRate}%\n` +
             `Просрочено: ${stats.overdue}`;
 
         await bot.sendMessage(chatId, message);
@@ -225,7 +227,7 @@ bot.on('message', async (msg) => {
                 userStates[chatId].step = 'AWAITING_TASK_DEADLINE';
                 await bot.sendMessage(
                     chatId, 
-                    'Введите дедлайн задачи в формате ДД.ММ.ГГГГ (или от��равьте "-" чтобы пропустить):'
+                    'Введите д��длайн задачи в формате ДД.ММ.ГГГГ (или отправьте "-" чтобы пропустить):'
                 );
                 break;
 
