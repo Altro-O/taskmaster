@@ -7,30 +7,29 @@ const ErrorHandler = require('./utils/errorHandler');
 
 async function startServer() {
     try {
+        console.log('Starting server...');
         logger.info('Starting server...');
         
         // Синхронизация базы данных
+        console.log('Syncing database...');
         logger.info('Syncing database...');
         await sequelize.sync({ alter: true });
-        logger.info('Database synced successfully');
+        console.log('Database synced');
+        logger.info('Database synced');
 
         // Запуск API сервера
         await new Promise((resolve) => {
             apiServer.listen(config.api.port, () => {
+                console.log(`API server is running on port ${config.api.port}`);
                 logger.info(`API server is running on port ${config.api.port}`);
                 resolve();
             });
         });
 
-        // Настройка вебхука для бота в продакшене
-        if (config.app.environment === 'production' && config.telegram.webhookUrl) {
-            logger.info('Setting up Telegram webhook...');
-            await bot.setWebHook(config.telegram.webhookUrl);
-            logger.info('Telegram webhook set successfully');
-        }
-
+        console.log('All systems operational');
         logger.info('All systems operational');
     } catch (error) {
+        console.error('Failed to start server:', error);
         logger.error('Failed to start server', error);
         process.exit(1);
     }
