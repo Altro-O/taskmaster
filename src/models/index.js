@@ -1,4 +1,19 @@
-const sequelize = require('../database');
+const sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: config.database.path,
+    logging: false,
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+    },
+    // Добавим эти настройки
+    dialectOptions: {
+        timeout: 60000,
+        busy_timeout: 60000
+    }
+});
 const User = require('./User');
 const Task = require('./Task');
 const Project = require('./Project');
