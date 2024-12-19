@@ -6,41 +6,47 @@ const sequelize = new Sequelize({
     storage: config.database.storage
 });
 
-// Импортируем модели
-const User = require('./User')(sequelize);
-const Task = require('./Task')(sequelize);
-const Project = require('./Project')(sequelize);
-const Template = require('./Template')(sequelize);
+// Импортируем модели напрямую
+const User = require('./User');
+const Task = require('./Task');
+const Project = require('./Project');
+const Template = require('./Template');
+
+// Инициализируем модели
+const UserModel = User(sequelize);
+const TaskModel = Task(sequelize);
+const ProjectModel = Project(sequelize);
+const TemplateModel = Template(sequelize);
 
 // Определяем связи между моделями
-User.hasMany(Task, { 
+UserModel.hasMany(TaskModel, { 
     foreignKey: 'UserId',
     onDelete: 'CASCADE'
 });
-Task.belongsTo(User);
+TaskModel.belongsTo(UserModel);
 
-User.hasMany(Project, {
+UserModel.hasMany(ProjectModel, {
     foreignKey: 'UserId',
     onDelete: 'CASCADE'
 });
-Project.belongsTo(User);
+ProjectModel.belongsTo(UserModel);
 
-Project.hasMany(Task, {
+ProjectModel.hasMany(TaskModel, {
     foreignKey: 'ProjectId',
     onDelete: 'CASCADE'
 });
-Task.belongsTo(Project);
+TaskModel.belongsTo(ProjectModel);
 
-User.hasMany(Template, {
+UserModel.hasMany(TemplateModel, {
     foreignKey: 'UserId',
     onDelete: 'CASCADE'
 });
-Template.belongsTo(User);
+TemplateModel.belongsTo(UserModel);
 
 module.exports = {
     sequelize,
-    User,
-    Task,
-    Project,
-    Template
+    User: UserModel,
+    Task: TaskModel,
+    Project: ProjectModel,
+    Template: TemplateModel
 }; 
