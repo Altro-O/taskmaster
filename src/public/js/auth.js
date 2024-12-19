@@ -6,25 +6,28 @@ function onTelegramAuth(user) {
         return;
     }
 
-    document.querySelector('.auth-section').innerHTML += '<div class="loading">Выполняется вход...</div>';
+    // Показываем индикатор загрузки
+    const authSection = document.querySelector('.auth-section');
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+    loadingDiv.textContent = 'Выполняется вход...';
+    authSection.appendChild(loadingDiv);
 
+    // Отправляем запрос на сервер
     fetch('/api/auth/telegram', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify(user),
-        credentials: 'include'
+        body: JSON.stringify(user)
     })
     .then(res => {
-        console.log('Auth response status:', res.status);
-        if (!res.ok) {
-            return res.json().then(err => {
-                throw new Error(err.error || 'Authentication failed');
-            });
-        }
-        return res.json();
+        console.log('Auth response:', res.status);
+        return res.json().then(data => {
+            if (!res.ok) throw new Error(data.error || 'Authentication failed');
+            return data;
+        });
     })
     .then(data => {
         console.log('Auth success:', data);
@@ -38,27 +41,15 @@ function onTelegramAuth(user) {
     })
     .catch(err => {
         console.error('Auth error:', err);
-        document.querySelector('.loading')?.remove();
+        loadingDiv.remove();
         alert('Ошибка авторизации: ' + err.message);
     });
 }
 
-// Проверка авторизации на защищенных страницах
-function checkAuth() {
-    const token = localStorage.getItem('token');
-    const currentPath = window.location.pathname;
-    
-    // Список защищенных страниц
-    const protectedPages = ['/dashboard.html', '/tasks.html', '/projects.html', '/stats.html'];
-    
-    if (!token && protectedPages.includes(currentPath)) {
-        window.location.href = '/';
-    }
-}
-
-// Добавляем слушатель для отладки
+// Добавляем отладочную информацию
+console.log('Auth script loaded');
 window.addEventListener('load', () => {
-    console.log('Auth script loaded');
+    console.log('Page loaded');
     if (window.Telegram) {
         console.log('Telegram widget available');
     }

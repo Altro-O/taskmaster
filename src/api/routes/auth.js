@@ -118,11 +118,9 @@ router.post('/link-telegram', authMiddleware, async (req, res) => {
 // Telegram авторизация
 router.post('/telegram', async (req, res) => {
     try {
-        console.log('Telegram auth request:', req.body);
-
+        console.log('Received auth request:', req.body);
         const { id, first_name, username, photo_url, auth_date, hash } = req.body;
 
-        // Проверяем данные от Telegram
         if (!id) {
             console.error('Missing telegram id');
             return res.status(400).json({ error: 'Missing telegram id' });
@@ -140,31 +138,24 @@ router.post('/telegram', async (req, res) => {
                 stats: {
                     tasksCompleted: 0,
                     totalTasks: 0,
-                    points: 0,
-                    achievements: {
-                        TASKS_COMPLETED: { level: 0, progress: 0 },
-                        PRIORITY_MASTER: { level: 0, progress: 0 },
-                        EARLY_BIRD: { level: 0, progress: 0 },
-                        SUBTASK_MASTER: { level: 0, progress: 0 }
-                    }
+                    points: 0
                 }
             }
         });
 
-        console.log('User found/created:', user.toJSON());
-        console.log('Is new user:', created);
+        console.log('User found/created:', { userId: user.id, isNew: created });
 
         // Создаем JWT токен
         const token = jwt.sign(
             { id: user.id, telegramId: user.telegramId },
             config.jwt.secret,
-            { expiresIn: config.jwt.expiresIn }
+            { expiresIn: '7d' }
         );
 
-        console.log('Token generated:', { userId: user.id });
-
-        res.json({ 
-            token, 
+        // Отправляем ответ
+        res.json({
+            success: true,
+            token,
             user: {
                 id: user.id,
                 username: user.username,
@@ -174,10 +165,11 @@ router.post('/telegram', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Auth error details:', error);
+        console.error('Auth error:', error);
         res.status(500).json({ 
-            error: 'Authentication failed', 
-            details: error.message 
+            success: false,
+            error: 'Authentication failed',
+            details: error.message
         });
     }
 });

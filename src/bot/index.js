@@ -15,7 +15,13 @@ const ReportService = require('../services/ReportService');
 
 // Изменяем настройки бота
 const bot = new TelegramBot(config.telegram.token, { 
-    polling: true,
+    polling: {
+        interval: 300,
+        autoStart: true,
+        params: {
+            timeout: 10
+        }
+    },
     filepath: false,
     webhookReply: false
 });
@@ -79,8 +85,11 @@ bot.onText(/\/start/, async (msg) => {
 
 // Обработка ошибок поллинга
 bot.on('polling_error', (error) => {
-    // Логируем только код ошибки
-    console.error('Bot polling error:', error.code);
+    if (error.code === 'ETELEGRAM') {
+        // Игнорируем частые ошибки поллинга
+        return;
+    }
+    console.error('Bot polling error:', error.code, error.message);
 });
 
 // Хранени состояния пользователя
@@ -226,49 +235,91 @@ bot.onText(/\/new_template/, async (msg) => {
     await bot.sendMessage(chatId, '📑 Введите название шаблона:');
 });
 
-// Обработка входящих сообщений
+// Обработка текстовых сообщений и кнопок
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
 
-    if (!userStates[chatId] || text.startsWith('/')) return;
+    // Если это состояние ожидания ввода
+    if (userStates[chatId] && !text.startsWith('/')) {
+        // ... существующая обработка состояний ...
+        return;
+    }
 
-    try {
-        switch (userStates[chatId].step) {
-            case 'AWAITING_TASK_TITLE':
-                userStates[chatId].taskTitle = text;
-                userStates[chatId].step = 'AWAITING_TASK_DESCRIPTION';
-                await bot.sendMessage(chatId, '📝 Введите описание задачи (или отправьте "-" чтобы пропустить):');
-                break;
+    // Обработка кнопок меню
+    switch (text) {
+        case '📝 Новая задача':
+            userStates[chatId] = { step: 'AWAITING_TASK_TITLE' };
+            await bot.sendMessage(chatId, '📝 Введите название задачи:');
+            break;
 
-            case 'AWAITING_TASK_DESCRIPTION':
-                userStates[chatId].taskDescription = text === '-' ? '' : text;
-                userStates[chatId].step = 'AWAITING_TASK_DEADLINE';
-                await bot.sendMessage(
-                    chatId, 
-                    '⏰ Введите дедлайн задачи в формате ДД.ММ.ГГГГ (или отправьте "-" чтобы пропустить):'
-                );
-                break;
+        case '📋 Мои задачи':
+            try {
+                const tasks = await Task.findAll({
+                    where: { UserId: chatId.toString() },
+                    order: [['createdAt', 'DESC']]
+                });
 
-            case 'AWAITING_PROJECT_TITLE':
-                try {
-                    const project = await ProjectService.createProject(chatId.toString(), {
-                        title: text,
-                        description: ''
-                    });
-                    await bot.sendMessage(chatId, `✅ Проект "${text}" успешно создан!`);
-                } catch (error) {
-                    await bot.sendMessage(chatId, '❌ Ошибка при создании проекта');
+                if (tasks.length === 0) {
+                    await bot.sendMessage(chatId, '📭 У вас пока нет задач');
+                    return;
                 }
-                delete userStates[chatId];
-                break;
 
-            // ... Остальные состояния ...
-        }
-    } catch (error) {
-        console.error('Error processing message:', error);
-        await bot.sendMessage(chatId, '❌ Произошла ошибка при обработке сообщения');
-        delete userStates[chatId];
+                const tasksMessage = tasks.map(task => 
+                    `📌 ${task.title}\n` +
+                    `📊 Статус: ${STATUS_MAP[task.status]}\n` +
+                    `⭐️ Приоритет: ${task.priority}\n` +
+                    `${task.deadline ? `⏰ Дедлайн: ${new Date(task.deadline).toLocaleDateString()}\n` : ''}` +
+                    `-------------------`
+                ).join('\n');
+
+                await bot.sendMessage(chatId, tasksMessage);
+            } catch (error) {
+                console.error('Error getting tasks:', error);
+                await bot.sendMessage(chatId, '❌ Произошла ошибка при получении задач');
+            }
+            break;
+
+        case '📊 Статистика':
+            try {
+                const stats = await analyticsService.getTasksStats(chatId.toString());
+                const message = 
+                    '📊 Ваша статистика:\n\n' +
+                    `✅ Выполнено задач: ${stats.completed}\n` +
+                    `📝 В процессе: ${stats.inProgress}\n` +
+                    `⏳ Ожидают выполнения: ${stats.todo}\n`;
+                await bot.sendMessage(chatId, message);
+            } catch (error) {
+                console.error('Error getting stats:', error);
+                await bot.sendMessage(chatId, '❌ Ошибка при получении статистики');
+            }
+            break;
+
+        case '⚙️ Настройки':
+            const settingsKeyboard = {
+                reply_markup: {
+                    keyboard: [
+                        ['🔔 Уведомления', '🎨 Тема'],
+                        ['↩️ Вернуться в главное меню']
+                    ],
+                    resize_keyboard: true
+                }
+            };
+            await bot.sendMessage(chatId, '⚙️ Выберите настройку:', settingsKeyboard);
+            break;
+
+        case '↩️ Вернуться в главное меню':
+            const mainKeyboard = {
+                reply_markup: {
+                    keyboard: [
+                        ['📝 Новая задача', '📋 Мои задачи'],
+                        ['📊 Статистика', '⚙️ Настройки']
+                    ],
+                    resize_keyboard: true
+                }
+            };
+            await bot.sendMessage(chatId, '📱 Главное меню', mainKeyboard);
+            break;
     }
 });
 
