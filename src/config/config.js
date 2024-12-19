@@ -8,12 +8,10 @@ module.exports = {
     },
     telegram: {
         token: process.env.TELEGRAM_BOT_TOKEN,
-        webhookUrl: process.env.NODE_ENV === 'production' 
-            ? `https://${process.env.DOMAIN}/webhook/${process.env.TELEGRAM_BOT_TOKEN}`
-            : null
+        botUsername: 'taskmaster_altro_bot'
     },
     database: {
-        path: process.env.DATABASE_PATH || path.join(__dirname, '../../database.sqlite')
+        storage: './database.sqlite'
     },
     app: {
         name: 'TaskMaster',
@@ -26,18 +24,12 @@ module.exports = {
         ip: '0.0.0.0'
     },
     api: {
-        port: process.env.API_PORT || 3000,
-        baseUrl: process.env.NODE_ENV === 'production' 
-            ? 'https://api.mytasks.store'
-            : 'http://localhost:3000',
-        corsOrigins: [
-            'https://mytasks.store',
-            'https://www.mytasks.store',
-            'http://localhost:3000'
-        ]
+        port: process.env.PORT || 3000,
+        baseUrl: 'https://mytasks.store',
+        corsOrigins: ['https://mytasks.store']
     },
     jwt: {
-        secret: process.env.JWT_SECRET,
+        secret: process.env.JWT_SECRET || 'your-secret-key',
         expiresIn: '7d'
     },
     ssl: {
