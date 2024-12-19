@@ -241,4 +241,87 @@ li:hover {
 
 .features h2:hover {
     background: var(--accent);
+}
+
+/* Стили для раскрывающегося списка возможностей */
+.features-button {
+    background: var(--primary);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 15px;
+    width: 100%;
+    border: none;
+    font-size: 1.2em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.features-button:hover {
+    background: var(--accent);
+    transform: translateY(-2px);
+}
+
+.features-button:after {
+    content: '▼';
+    font-size: 0.8em;
+    transition: transform 0.3s ease;
+}
+
+.features-button.expanded:after {
+    transform: rotate(180deg);
+}
+
+.features-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out;
+    background: white;
+    border-radius: 15px;
+    margin-top: 10px;
+}
+
+.features-content.expanded {
+    max-height: 1000px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.feature-category {
+    margin-bottom: 25px;
+}
+
+.feature-category h3 {
+    color: var(--primary);
+    font-size: 1.3em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.feature-category ul {
+    margin-left: 35px;
+}
+
+.feature-category li {
+    margin: 12px 0;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1em;
+}
+
+.feature-category li:before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--primary);
+    border-radius: 50%;
 } 

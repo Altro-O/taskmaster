@@ -13,7 +13,14 @@ const fs = require('fs');
 const ProjectService = require('../services/ProjectService');
 const ReportService = require('../services/ReportService');
 
-const bot = new TelegramBot(config.telegram.token, { polling: true });
+// Изменяем настройки бота
+const bot = new TelegramBot(config.telegram.token, { 
+    polling: true,
+    // Добавляем параметры для избежания конфликтов
+    filepath: false,
+    webhookReply: false
+});
+
 const reminderService = new ReminderService(bot);
 const taskController = new TaskController(reminderService);
 const gameService = new GameService();
@@ -254,7 +261,7 @@ bot.on('message', async (msg) => {
                     });
                     await bot.sendMessage(chatId, `✅ Проект "${text}" успешно создан!`);
                 } catch (error) {
-                    await bot.sendMessage(chatId, '❌ Ошибка ��ри создании проекта');
+                    await bot.sendMessage(chatId, '❌ Ошибка при создании проекта');
                 }
                 delete userStates[chatId];
                 break;
@@ -398,6 +405,12 @@ bot.onText(/\/(report_pdf|report_excel)/, async (msg) => {
     } catch (error) {
         await bot.sendMessage(chatId, '❌ Ошибка при создании отчета');
     }
+});
+
+// Добавляем обработку ошибок
+bot.on('polling_error', (error) => {
+    console.error('Bot polling error:', error.code);  // Логируем только код ошибки
+    // Не останавливаем бота при ошибках
 });
 
 module.exports = bot;
