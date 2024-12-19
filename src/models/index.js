@@ -3,40 +3,39 @@ const config = require('../config/config');
 
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: config.database.path,
-    logging: false,
-    pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-    },
-    dialectOptions: {
-        timeout: 60000,
-        busy_timeout: 60000
-    }
+    storage: config.database.storage
 });
-const User = require('./User');
-const Task = require('./Task');
-const Project = require('./Project');
-const Template = require('./Template');
 
-// Определяем связи
-User.hasMany(Task);
+// Импортируем модели
+const User = require('./User')(sequelize);
+const Task = require('./Task')(sequelize);
+const Project = require('./Project')(sequelize);
+const Template = require('./Template')(sequelize);
+
+// Определяем связи между моделями
+User.hasMany(Task, { 
+    foreignKey: 'UserId',
+    onDelete: 'CASCADE'
+});
 Task.belongsTo(User);
 
-User.hasMany(Project);
+User.hasMany(Project, {
+    foreignKey: 'UserId',
+    onDelete: 'CASCADE'
+});
 Project.belongsTo(User);
 
-User.hasMany(Template);
-Template.belongsTo(User);
-
-Project.hasMany(Task);
+Project.hasMany(Task, {
+    foreignKey: 'ProjectId',
+    onDelete: 'CASCADE'
+});
 Task.belongsTo(Project);
 
-// Самосвязь для проектов (иерархия)
-Project.hasMany(Project, { as: 'subprojects', foreignKey: 'parent' });
-Project.belongsTo(Project, { as: 'parentProject', foreignKey: 'parent' });
+User.hasMany(Template, {
+    foreignKey: 'UserId',
+    onDelete: 'CASCADE'
+});
+Template.belongsTo(User);
 
 module.exports = {
     sequelize,
