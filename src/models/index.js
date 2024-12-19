@@ -6,17 +6,11 @@ const sequelize = new Sequelize({
     storage: config.database.storage
 });
 
-// Импортируем модели напрямую
-const User = require('./User');
-const Task = require('./Task');
-const Project = require('./Project');
-const Template = require('./Template');
-
-// Инициализируем модели
-const UserModel = User(sequelize);
-const TaskModel = Task(sequelize);
-const ProjectModel = Project(sequelize);
-const TemplateModel = Template(sequelize);
+// Импортируем модели
+const UserModel = require('./User')(sequelize);
+const TaskModel = require('./Task')(sequelize);
+const ProjectModel = require('./Project')(sequelize);
+const TemplateModel = require('./Template')(sequelize);
 
 // Определяем связи между моделями
 UserModel.hasMany(TaskModel, { 
