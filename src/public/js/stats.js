@@ -30,4 +30,7 @@ function renderStats(stats) {
     `;
 }
 
-document.addEventListener('DOMContentLoaded', loadStats);
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    loadStats();
+});
