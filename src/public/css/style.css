@@ -141,4 +141,45 @@ li:hover {
     background: #f5f6fa;
 }
 
+/* Добавляем стили для авторизации */
+.auth-section {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 15px;
+    margin: 30px 0;
+    text-align: center;
+}
+
+.auth-hint {
+    color: var(--dark);
+    margin-top: 15px;
+    font-size: 0.9em;
+}
+
+.or-divider {
+    text-align: center;
+    margin: 20px 0;
+    position: relative;
+}
+
+.or-divider::before,
+.or-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: rgba(0,0,0,0.1);
+}
+
+.or-divider::before { left: 0; }
+.or-divider::after { right: 0; }
+
+.or-divider span {
+    background: white;
+    padding: 0 15px;
+    color: var(--dark);
+    font-size: 0.9em;
+}
+
 /* ... остальные стили ... */ 

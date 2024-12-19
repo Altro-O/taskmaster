@@ -6,19 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/png" href="/images/favicon.png">
-    <script async src="https://telegram.org/js/telegram-widget.js?22" 
-        data-telegram-login="taskmaster_altro_bot" 
-        data-size="large" 
-        data-auth-url="https://mytasks.store/auth/telegram"
-        data-request-access="write">
-    </script>
 </head>
 <body>
     <div class="container">
         <img src="images/logo.png" alt="TaskMaster Logo" class="logo">
         <h1>TaskMaster</h1>
         <p>Эффективное управление задачами прямо в Telegram</p>
-        <a href="https://t.me/taskmaster_altro_bot" class="bot-link">@taskmaster_altro_bot</a>
+        
+        <div class="auth-section">
+            <h2>Войти в личный кабинет</h2>
+            <script async src="https://telegram.org/js/telegram-widget.js?22" 
+                data-telegram-login="taskmaster_altro_bot" 
+                data-size="large" 
+                data-onauth="onTelegramAuth(user)"
+                data-request-access="write">
+            </script>
+            <p class="auth-hint">Нажмите кнопку выше, чтобы войти через Telegram</p>
+        </div>
+
+        <div class="or-divider">
+            <span>или</span>
+        </div>
+
+        <a href="https://t.me/taskmaster_altro_bot" class="bot-link">Открыть бота в Telegram</a>
         
         <div class="features">
             <h2>Возможности:</h2>
@@ -34,5 +44,6 @@
             </ul>
         </div>
     </div>
+    <script src="/js/auth.js"></script>
 </body>
 </html> 
