@@ -1,5 +1,5 @@
 function onTelegramAuth(user) {
-    console.log('Telegram auth:', user); // Для отладки
+    console.log('Telegram auth data:', user);
 
     fetch('/api/auth/telegram', {
         method: 'POST',
@@ -9,12 +9,17 @@ function onTelegramAuth(user) {
         body: JSON.stringify(user)
     })
     .then(res => {
+        console.log('Auth response status:', res.status);
         if (!res.ok) {
-            throw new Error('Auth failed');
+            return res.text().then(text => {
+                console.error('Auth error response:', text);
+                throw new Error('Auth failed: ' + text);
+            });
         }
         return res.json();
     })
     .then(data => {
+        console.log('Auth success:', data);
         if (data.token) {
             localStorage.setItem('token', data.token);
             window.location.href = '/dashboard.html';
@@ -24,7 +29,7 @@ function onTelegramAuth(user) {
     })
     .catch(err => {
         console.error('Auth error:', err);
-        alert('Ошибка авторизации. Попробуйте позже.');
+        alert('Ошибка авторизации: ' + err.message);
     });
 }
 

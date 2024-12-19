@@ -1,18 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
-const TaskController = require('../../controllers/TaskController');
-const AuthController = require('../controllers/AuthController');
 const authRoutes = require('./auth');
 const taskRoutes = require('./tasks');
 const projectRoutes = require('./projects');
 
-router.post('/auth/telegram', AuthController.telegramAuth);
-router.get('/tasks', authMiddleware, TaskController.getUserTasks);
-router.post('/tasks', authMiddleware, TaskController.createTask);
+// Роуты авторизации (без middleware)
 router.use('/auth', authRoutes);
+
+// Защищенные роуты (с middleware)
 router.use('/tasks', authMiddleware, taskRoutes);
 router.use('/projects', authMiddleware, projectRoutes);
-// ... другие роуты
 
 module.exports = router; 

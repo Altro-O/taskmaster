@@ -1,28 +1,35 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const logger = require('../utils/logger');
+const routes = require('./routes');
+const config = require('../config/config');
 const path = require('path');
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// CORS
+app.use(cors({
+    origin: config.api.corsOrigins,
+    credentials: true
+}));
 
-// Статические файлы - важно указать абсолютный путь
+// Body parser
+app.use(express.json());
+
+// Статические файлы
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Базовый маршрут
-app.get('/', (req, res) => {
+// API routes
+app.use('/api', routes);
+
+// SPA fallback
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Обработка ошибок
+// Error handler
 app.use((err, req, res, next) => {
-    logger.error('API Error:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
 });
 
 module.exports = app; 
