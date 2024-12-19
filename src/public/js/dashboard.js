@@ -10,4 +10,10 @@ const getTasks = async () => {
 const updateDashboard = async () => {
     const tasks = await getTasks();
     // Отображение задач
-}; 
+};
+
+// Проверяем авторизацию при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth(); // Из auth.js
+    updateDashboard();
+}); 

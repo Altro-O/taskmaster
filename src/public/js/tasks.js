@@ -30,4 +30,7 @@ function renderTasks(tasks) {
     `).join('');
 }
 
-document.addEventListener('DOMContentLoaded', loadTasks);
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    loadTasks();
+});

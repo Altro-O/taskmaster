@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>TaskMaster - Dashboard</title>
+    <title>TaskMaster - Панель управления</title>
+    <meta charset="utf-8">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/dashboard.css">
 </head>
@@ -13,41 +14,30 @@
                 <h3 id="userName"></h3>
             </div>
             <ul class="menu">
-                <li class="active"><a href="/dashboard.html">📊 Dashboard</a></li>
-                <li><a href="/kanban.html">📋 Kanban Board</a></li>
-                <li><a href="/projects.html">📁 Projects</a></li>
-                <li><a href="/stats.html">📈 Statistics</a></li>
-                <li><a href="/profile.html">⚙️ Settings</a></li>
+                <li class="active"><a href="/dashboard.html">📊 Панель управления</a></li>
+                <li><a href="/tasks.html">📝 Задачи</a></li>
+                <li><a href="/projects.html">📁 Проекты</a></li>
+                <li><a href="/stats.html">📈 Статистика</a></li>
             </ul>
         </nav>
         <main class="content">
             <header class="dashboard-header">
-                <h1>Dashboard</h1>
-                <button class="btn-primary" onclick="createTask()">+ New Task</button>
+                <h1>Панель управления</h1>
+                <button class="new-task-btn" onclick="createTask()">+ Новая задача</button>
             </header>
             <div class="dashboard-grid">
                 <div class="card tasks-overview">
-                    <h2>Tasks Overview</h2>
-                    <div class="tasks-list" id="tasksList">
-                        <!-- Tasks will be loaded here -->
-                    </div>
+                    <h2>Обзор задач</h2>
+                    <div id="tasksOverview"></div>
                 </div>
-                <div class="card quick-stats">
-                    <h2>Statistics</h2>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-value" id="totalTasks">0</span>
-                            <span class="stat-label">Total Tasks</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="completedTasks">0</span>
-                            <span class="stat-label">Completed</span>
-                        </div>
-                    </div>
+                <div class="card stats-overview">
+                    <h2>Статистика</h2>
+                    <div id="statsOverview"></div>
                 </div>
             </div>
         </main>
     </div>
+    <script src="/js/auth.js"></script>
     <script src="/js/dashboard.js"></script>
 </body>
 </html> 

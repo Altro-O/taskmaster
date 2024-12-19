@@ -124,6 +124,61 @@ class TaskController {
             throw error;
         }
     }
+
+    static async getTasks(userId) {
+        try {
+            const tasks = await Task.findAll({
+                where: { UserId: userId },
+                order: [['createdAt', 'DESC']]
+            });
+            return tasks;
+        } catch (error) {
+            console.error('Error getting tasks:', error);
+            throw error;
+        }
+    }
+
+    static async updateTask(taskId, data) {
+        try {
+            const [updated] = await Task.update(data, {
+                where: { id: taskId },
+                returning: true
+            });
+
+            if (!updated) throw new Error('Task not found');
+
+            const task = await Task.findOne({
+                where: { id: taskId }
+            });
+
+            if (data.status === 'DONE' && task.status !== 'DONE') {
+                await User.increment(
+                    { 'stats.tasksCompleted': 1 },
+                    { where: { id: data.UserId } }
+                );
+                task.completedAt = new Date();
+                await task.save();
+            }
+
+            return task;
+        } catch (error) {
+            console.error('Error updating task:', error);
+            throw error;
+        }
+    }
+
+    static async deleteTask(taskId) {
+        try {
+            const task = await Task.findByPk(taskId);
+            if (!task) throw new Error('Task not found');
+
+            await task.destroy();
+            return { message: 'Task deleted successfully' };
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = TaskController; 
