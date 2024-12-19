@@ -11,14 +11,16 @@ const LeaderboardService = require('../services/LeaderboardService');
 const path = require('path');
 const fs = require('fs');
 const ProjectService = require('../services/ProjectService');
+const ReportService = require('../services/ReportService');
 
 const bot = new TelegramBot(config.telegram.token, { polling: true });
 const reminderService = new ReminderService(bot);
 const taskController = new TaskController(reminderService);
 const gameService = new GameService();
 const leaderboardService = new LeaderboardService();
-const templateController = new TemplateController(taskController);
 const analyticsService = new AnalyticsService();
+const templateController = new TemplateController(taskController);
+const reportService = new ReportService();
 
 // Хранени состояния пользователя
 const userStates = {};
@@ -252,7 +254,7 @@ bot.on('message', async (msg) => {
                     });
                     await bot.sendMessage(chatId, `✅ Проект "${text}" успешно создан!`);
                 } catch (error) {
-                    await bot.sendMessage(chatId, '❌ Ошибка при создании проекта');
+                    await bot.sendMessage(chatId, '❌ Ошибка ��ри создании проекта');
                 }
                 delete userStates[chatId];
                 break;

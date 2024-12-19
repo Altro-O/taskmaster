@@ -157,4 +157,6 @@ class ReportService {
     }
 }
 
+const reportService = new ReportService();
+
 module.exports = ReportService; 

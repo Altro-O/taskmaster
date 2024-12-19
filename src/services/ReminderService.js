@@ -9,33 +9,22 @@ class ReminderService {
 
     async checkDeadlines() {
         try {
-            // Проверяем каждый час
             setInterval(async () => {
                 const tasks = await Task.findAll({
                     where: {
                         deadline: {
-                            [Op.lte]: new Date(Date.now() + 24 * 60 * 60 * 1000), // следующие 24 часа
+                            [Op.lte]: new Date(Date.now() + 24 * 60 * 60 * 1000),
                             [Op.gte]: new Date()
                         },
                         status: {
                             [Op.ne]: 'DONE'
                         }
                     },
-                    include: [{ 
-                        model: User,
-                        where: {
-                            'settings.notifications': true
-                        }
-                    }]
+                    include: [{ model: User }]
                 });
 
                 for (const task of tasks) {
-                    const timeLeft = task.deadline - new Date();
-                    if (timeLeft <= 60 * 60 * 1000) { // меньше часа
-                        await this.sendReminder(task, 'через час');
-                    } else if (timeLeft <= 24 * 60 * 60 * 1000) { // меньше суток
-                        await this.sendReminder(task, 'завтра');
-                    }
+                    await this.sendReminder(task);
                 }
             }, 60 * 60 * 1000); // каждый час
         } catch (error) {
@@ -43,14 +32,11 @@ class ReminderService {
         }
     }
 
-    async sendReminder(task, timeFrame) {
+    async sendReminder(task) {
         try {
             const message = 
-                `⚠️ Напоминание о задаче\n\n` +
-                `Задача "${task.title}" должна быть выполнена ${timeFrame}\n` +
-                `Приоритет: ${task.priority}\n` +
-                `Статус: ${task.status}`;
-
+                `⚠️ Напоминание: "${task.title}"\n` +
+                `Дедлайн: ${new Date(task.deadline).toLocaleString()}`;
             await this.bot.sendMessage(task.User.telegramId, message);
         } catch (error) {
             console.error('Error sending reminder:', error);
@@ -58,4 +44,4 @@ class ReminderService {
     }
 }
 
-module.exports = ReminderService; 
+module.exports = ReminderService;
