@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const { sequelize } = require('./models');
 const config = require('./config/config');
 const bot = require('./bot');
@@ -10,7 +11,7 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // API routes
 app.use('/api', apiRoutes);
