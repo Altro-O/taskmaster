@@ -115,4 +115,41 @@ router.post('/link-telegram', authMiddleware, async (req, res) => {
     }
 });
 
+// Telegram авторизация
+router.post('/telegram', async (req, res) => {
+    try {
+        const { id, first_name, username, photo_url, auth_date, hash } = req.body;
+
+        // Создаем или находим пользователя
+        const [user] = await User.findOrCreate({
+            where: { telegramId: id.toString() },
+            defaults: {
+                username: username || first_name,
+                settings: {
+                    notifications: true,
+                    theme: 'light'
+                },
+                stats: {
+                    tasksCompleted: 0,
+                    totalTasks: 0,
+                    points: 0,
+                    achievements: {}
+                }
+            }
+        });
+
+        // Создаем JWT токен
+        const token = jwt.sign(
+            { id: user.id, telegramId: user.telegramId },
+            config.jwt.secret,
+            { expiresIn: config.jwt.expiresIn }
+        );
+
+        res.json({ token, user });
+    } catch (error) {
+        console.error('Auth error:', error);
+        res.status(500).json({ error: 'Authentication failed' });
+    }
+});
+
 module.exports = router; 

@@ -1,13 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const ProjectController = require('../../controllers/ProjectController');
+const ProjectService = require('../../services/ProjectService');
 
 router.get('/', async (req, res) => {
     try {
-        const projects = await ProjectController.getUserProjects(req.userId);
+        const projects = await ProjectService.getProjects(req.user.id);
         res.json(projects);
     } catch (error) {
-        res.status(500).json({ message: 'Ошибка при получении проектов' });
+        res.status(500).json({ error: 'Failed to get projects' });
+    }
+});
+
+router.post('/', async (req, res) => {
+    try {
+        const project = await ProjectService.createProject(req.user.id, req.body);
+        res.json(project);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create project' });
     }
 });
 
