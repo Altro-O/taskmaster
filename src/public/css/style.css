@@ -203,4 +203,42 @@ li:hover {
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-/* ... остальные стили ... */ 
+/* ... остальные стили ... */
+
+.features h3 {
+    color: var(--primary);
+    margin: 20px 0 10px;
+    font-size: 1.2em;
+}
+
+.features-list {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.features-list ul {
+    margin-left: 20px;
+}
+
+.features-list li {
+    margin: 10px 0;
+    color: var(--dark);
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+.features h2 {
+    background: var(--primary);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin: 0;
+    transition: background-color 0.3s;
+}
+
+.features h2:hover {
+    background: var(--accent);
+} 

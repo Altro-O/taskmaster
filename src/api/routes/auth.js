@@ -122,8 +122,14 @@ router.post('/telegram', async (req, res) => {
 
         const { id, first_name, username, photo_url, auth_date, hash } = req.body;
 
+        // Проверяем данные от Telegram
+        if (!id) {
+            console.error('Missing telegram id');
+            return res.status(400).json({ error: 'Missing telegram id' });
+        }
+
         // Создаем или находим пользователя
-        const [user] = await User.findOrCreate({
+        const [user, created] = await User.findOrCreate({
             where: { telegramId: id.toString() },
             defaults: {
                 username: username || first_name,
@@ -135,12 +141,18 @@ router.post('/telegram', async (req, res) => {
                     tasksCompleted: 0,
                     totalTasks: 0,
                     points: 0,
-                    achievements: {}
+                    achievements: {
+                        TASKS_COMPLETED: { level: 0, progress: 0 },
+                        PRIORITY_MASTER: { level: 0, progress: 0 },
+                        EARLY_BIRD: { level: 0, progress: 0 },
+                        SUBTASK_MASTER: { level: 0, progress: 0 }
+                    }
                 }
             }
         });
 
         console.log('User found/created:', user.toJSON());
+        console.log('Is new user:', created);
 
         // Создаем JWT токен
         const token = jwt.sign(
@@ -151,10 +163,22 @@ router.post('/telegram', async (req, res) => {
 
         console.log('Token generated:', { userId: user.id });
 
-        res.json({ token, user });
+        res.json({ 
+            token, 
+            user: {
+                id: user.id,
+                username: user.username,
+                telegramId: user.telegramId,
+                settings: user.settings,
+                stats: user.stats
+            }
+        });
     } catch (error) {
         console.error('Auth error details:', error);
-        res.status(500).json({ error: 'Authentication failed', details: error.message });
+        res.status(500).json({ 
+            error: 'Authentication failed', 
+            details: error.message 
+        });
     }
 });
 
