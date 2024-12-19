@@ -6,46 +6,27 @@ class TaskController {
         this.reminderService = reminderService;
     }
 
-    async createTask(userId, data) {
+    static async getUserTasks(req, res) {
         try {
-            const task = await Task.create({
-                ...data,
-                UserId: userId,
-                status: 'TODO'
+            const tasks = await Task.findAll({
+                where: { UserId: req.user.id },
+                order: [['createdAt', 'DESC']]
             });
-
-            if (data.projectId) {
-                await task.setProject(data.projectId);
-            }
-
-            await User.increment(
-                { 'stats.totalTasks': 1 },
-                { where: { id: userId } }
-            );
-
-            return task;
+            res.json(tasks);
         } catch (error) {
-            console.error('Error creating task:', error);
-            throw error;
+            res.status(500).json({ error: error.message });
         }
     }
 
-    async getUserTasks(userId, filters = {}) {
+    static async createTask(req, res) {
         try {
-            const where = { UserId: userId };
-
-            if (filters.status) where.status = filters.status;
-            if (filters.priority) where.priority = filters.priority;
-            if (filters.projectId) where.ProjectId = filters.projectId;
-
-            return await Task.findAll({
-                where,
-                include: [{ model: Project, attributes: ['id', 'title'] }],
-                order: [['createdAt', 'DESC']]
+            const task = await Task.create({
+                ...req.body,
+                UserId: req.user.id
             });
+            res.json(task);
         } catch (error) {
-            console.error('Error getting tasks:', error);
-            throw error;
+            res.status(500).json({ error: error.message });
         }
     }
 
