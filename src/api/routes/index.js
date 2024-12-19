@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
-const TaskController = require('../controllers/TaskController');
+const TaskController = require('../../controllers/TaskController');
 const AuthController = require('../controllers/AuthController');
 
 router.post('/auth/telegram', AuthController.telegramAuth);
