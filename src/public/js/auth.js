@@ -6,17 +6,23 @@ function onTelegramAuth(user) {
         return;
     }
 
+    document.querySelector('.auth-section').innerHTML += '<div class="loading">Выполняется вход...</div>';
+
     fetch('/api/auth/telegram', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         },
-        body: JSON.stringify(user)
+        body: JSON.stringify(user),
+        credentials: 'include'
     })
     .then(res => {
         console.log('Auth response status:', res.status);
         if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json().then(err => {
+                throw new Error(err.error || 'Authentication failed');
+            });
         }
         return res.json();
     })
@@ -32,6 +38,7 @@ function onTelegramAuth(user) {
     })
     .catch(err => {
         console.error('Auth error:', err);
+        document.querySelector('.loading')?.remove();
         alert('Ошибка авторизации: ' + err.message);
     });
 }
@@ -39,7 +46,20 @@ function onTelegramAuth(user) {
 // Проверка авторизации на защищенных страницах
 function checkAuth() {
     const token = localStorage.getItem('token');
-    if (!token && !window.location.pathname.includes('index.html')) {
+    const currentPath = window.location.pathname;
+    
+    // Список защищенных страниц
+    const protectedPages = ['/dashboard.html', '/tasks.html', '/projects.html', '/stats.html'];
+    
+    if (!token && protectedPages.includes(currentPath)) {
         window.location.href = '/';
     }
-} 
+}
+
+// Добавляем слушатель для отладки
+window.addEventListener('load', () => {
+    console.log('Auth script loaded');
+    if (window.Telegram) {
+        console.log('Telegram widget available');
+    }
+}); 

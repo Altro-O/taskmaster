@@ -16,11 +16,11 @@ const ReportService = require('../services/ReportService');
 // Изменяем настройки бота
 const bot = new TelegramBot(config.telegram.token, { 
     polling: true,
-    // Добавляем параметры для избежания конфликтов
     filepath: false,
     webhookReply: false
 });
 
+// Инициализация сервисов
 const reminderService = new ReminderService(bot);
 const taskController = new TaskController(reminderService);
 const gameService = new GameService();
@@ -28,6 +28,60 @@ const leaderboardService = new LeaderboardService();
 const analyticsService = new AnalyticsService();
 const templateController = new TemplateController(taskController);
 const reportService = new ReportService();
+
+// Обработчик команды /start
+bot.onText(/\/start/, async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+        const user = await User.findOne({
+            where: { telegramId: chatId.toString() }
+        });
+
+        if (!user) {
+            await User.create({
+                telegramId: chatId.toString(),
+                username: msg.from.username || msg.from.first_name,
+                settings: {
+                    notifications: true,
+                    theme: 'light'
+                },
+                stats: {
+                    tasksCompleted: 0,
+                    totalTasks: 0,
+                    points: 0,
+                    achievements: {}
+                }
+            });
+        }
+
+        const keyboard = {
+            reply_markup: {
+                keyboard: [
+                    ['📝 Новая задача', '📋 Мои задачи'],
+                    ['📊 Статистика', '⚙️ Настройки']
+                ],
+                resize_keyboard: true
+            }
+        };
+
+        await bot.sendMessage(
+            chatId,
+            'Добро пожаловать в TaskMaster! 👋\n\n' +
+            'Я помогу вам управлять задачами и быть продуктивнее. ' +
+            'Используйте меню ниже или отправьте /help для списка команд.',
+            keyboard
+        );
+    } catch (error) {
+        console.error('Error in /start command:', error);
+        await bot.sendMessage(chatId, '❌ Произошла ошибка при запуске бота');
+    }
+});
+
+// Обработка ошибок поллинга
+bot.on('polling_error', (error) => {
+    // Логируем только код ошибки
+    console.error('Bot polling error:', error.code);
+});
 
 // Хранени состояния пользователя
 const userStates = {};
@@ -62,63 +116,6 @@ const STATUS_MAP = {
     'IN_PROGRESS': 'В процессе',
     'DONE': 'Выполнено'
 };
-
-// Команды бота
-bot.onText(/\/start/, async (msg) => {
-    const chatId = msg.chat.id;
-    try {
-        // Создаем или находим пользователя
-        const [user] = await User.findOrCreate({
-            where: { telegramId: chatId.toString() },
-            defaults: {
-                username: msg.from.username,
-                settings: {
-                    notifications: true,
-                    theme: 'light'
-                },
-                stats: {
-                    tasksCompleted: 0,
-                    totalTasks: 0,
-                    points: 0
-                }
-            }
-        });
-
-        await gameService.initUserAchievements(chatId.toString());
-        
-        await bot.sendMessage(chatId, 
-            'Добро пожаловать в TaskMaster! 🚀\n\n' +
-            'Доступные команды:\n' +
-            '📝 /new_task - Создать новую задачу\n' +
-            '📋 /my_tasks - Посмотреть мои задачи\n' +
-            '📁 /new_project - Создать новый проект\n' +
-            '📂 /my_projects - Посмотреть мои проекты\n' +
-            '📑 /new_template - Создать шаблон задачи\n' +
-            '📚 /my_templates - Посмотреть мои шаблоны\n' +
-            '✨ /create_from_template - Создать задачу из шаблона\n' +
-            '⭐️ /set_priority - Установить приоритет задачи\n' +
-            '✅ /add_subtask - Добавить подзадачу\n' +
-            '☑️ /toggle_subtask - Отметить подзадачу\n' +
-            '🏆 /leaderboard - Глобальный рейтинг\n' +
-            '📈 /weekly_top - Топ недели\n' +
-            '🎯 /my_rank - Мой рейтинг\n' +
-            '📊 /stats - Общая статистика\n' +
-            '📈 /project_stats - Статистика по проектам\n' +
-            '📉 /productivity - Отчет о продуктивности\n' +
-            '🎮 /level - Мой уровень и очки\n' +
-            '🏅 /achievements - Мои достижения\n' +
-            '📋 /kanban - Показать Kanban-доску\n' +
-            '↔️ /move_task - Переместить задачу\n' +
-            '📊 /chart - График задач\n' +
-            '📄 /report_pdf - Отчет в PDF\n' +
-            '📊 /report_excel - Отчет в Excel\n' +
-            '📋 /help - Помощь'
-        );
-    } catch (error) {
-        console.error('Error in /start command:', error);
-        await bot.sendMessage(chatId, '❌ Произошла ошибка при запуске бота');
-    }
-});
 
 // Команда создания новой задачи
 bot.onText(/\/new_task/, async (msg) => {
@@ -405,12 +402,6 @@ bot.onText(/\/(report_pdf|report_excel)/, async (msg) => {
     } catch (error) {
         await bot.sendMessage(chatId, '❌ Ошибка при создании отчета');
     }
-});
-
-// Добавляем обработку ошибок
-bot.on('polling_error', (error) => {
-    console.error('Bot polling error:', error.code);  // Логируем только код ошибки
-    // Не останавливаем бота при ошибках
 });
 
 module.exports = bot;
