@@ -1,16 +1,21 @@
-const { DataTypes } = require('sequelize');
+const { Model, DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
-    const Template = sequelize.define('Template', {
+    class Template extends Model {}
+
+    Template.init({
         title: {
             type: DataTypes.STRING,
             allowNull: false
         },
         description: DataTypes.TEXT,
-        defaultPriority: {
-            type: DataTypes.ENUM('LOW', 'MEDIUM', 'HIGH', 'URGENT'),
-            defaultValue: 'MEDIUM'
+        taskTemplate: {
+            type: DataTypes.JSON,
+            defaultValue: {}
         }
+    }, {
+        sequelize,
+        modelName: 'Template'
     });
 
     return Template;
