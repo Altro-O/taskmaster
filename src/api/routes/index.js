@@ -1,21 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const authRoutes = require('./auth');
-const taskRoutes = require('./tasks');
-// const projectRoutes = require('./projects');
-// const templateRoutes = require('./templates');
-// const analyticsRoutes = require('./analytics');
-// const userRoutes = require('./users');
 const authMiddleware = require('../middleware/auth');
+const TaskController = require('../controllers/TaskController');
+const AuthController = require('../controllers/AuthController');
 
-// Публичные маршруты
-router.use('/auth', authRoutes);
-
-// Защищенные маршруты (требуют авторизации)
-router.use('/tasks', authMiddleware, taskRoutes);
-// router.use('/projects', authMiddleware, projectRoutes);
-// router.use('/templates', authMiddleware, templateRoutes);
-// router.use('/analytics', authMiddleware, analyticsRoutes);
-// router.use('/users', authMiddleware, userRoutes);
+router.post('/auth/telegram', AuthController.telegramAuth);
+router.get('/tasks', authMiddleware, TaskController.getUserTasks);
+router.post('/tasks', authMiddleware, TaskController.createTask);
+// ... другие роуты
 
 module.exports = router; 

@@ -1,27 +1,35 @@
+const express = require('express');
 const { sequelize } = require('./models');
 const config = require('./config/config');
 const bot = require('./bot');
-const apiServer = require('./api/server');
+const apiRoutes = require('./api/routes');
 const logger = require('./utils/logger');
 const ErrorHandler = require('./utils/errorHandler');
 
+const app = express();
+
+// Middleware
+app.use(express.json());
+app.use(express.static('public'));
+
+// API routes
+app.use('/api', apiRoutes);
+
+// Serve SPA
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/index.html'));
+});
+
 async function startServer() {
     try {
-        logger.info('Starting server...');
-        
-        await sequelize.sync({ force: true });
+        await sequelize.sync({ alter: true });
         logger.info('Database synced');
 
-        await new Promise((resolve) => {
-            apiServer.listen(config.api.port, config.server.host, () => {
-                logger.info(`API server is running on port ${config.api.port}`);
-                resolve();
-            });
+        app.listen(config.api.port, config.server.host, () => {
+            logger.info(`Server running on port ${config.api.port}`);
         });
-
-        logger.info('All systems operational');
     } catch (error) {
-        logger.error('Failed to start server', error);
+        logger.error('Failed to start server:', error);
         process.exit(1);
     }
 }
