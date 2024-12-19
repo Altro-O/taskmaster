@@ -252,7 +252,7 @@ bot.on('message', async (msg) => {
                     });
                     await bot.sendMessage(chatId, `✅ Проект "${text}" успешно создан!`);
                 } catch (error) {
-                    await bot.sendMessage(chatId, '❌ Ошибка при создани�� проекта');
+                    await bot.sendMessage(chatId, '❌ Ошибка при создании проекта');
                 }
                 delete userStates[chatId];
                 break;
