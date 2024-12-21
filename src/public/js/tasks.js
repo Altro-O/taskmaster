@@ -10,7 +10,13 @@ async function loadTasks() {
         const response = await fetch('/api/tasks', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const tasks = await response.json();
+        if (!Array.isArray(tasks)) {
+            throw new Error('Tasks data is not an array');
+        }
         renderTasks(tasks);
     } catch (error) {
         console.error('Error loading tasks:', error);
@@ -43,7 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function createTask() {
     const modal = document.getElementById('createTaskModal');
-    modal.style.display = 'block';
+    if (modal) {
+        modal.style.display = 'block';
+    } else {
+        console.error('Modal element not found');
+    }
 }
 
 async function submitTask(event) {
