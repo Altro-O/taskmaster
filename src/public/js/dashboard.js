@@ -16,37 +16,42 @@ function showDonateModal() {
 
 async function loadDashboard() {
     const token = localStorage.getItem('token');
-    
     try {
-        // Загружаем задачи
-        const tasksResponse = await fetch('/api/tasks', {
+        const response = await fetch('/api/tasks', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const tasks = await tasksResponse.json();
-        
-        // Загружаем статистику
-        const statsResponse = await fetch('/api/stats', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const stats = await statsResponse.json();
-        
-        updateDashboard(tasks, stats);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const tasks = await response.json();
+        if (!Array.isArray(tasks)) {
+            throw new Error('Tasks data is not an array');
+        }
+        renderDashboard(tasks);
     } catch (error) {
         console.error('Error loading dashboard:', error);
     }
 }
 
-function updateDashboard(tasks, stats) {
-    // Обновляем статистику
-    document.getElementById('totalTasks').textContent = stats.total;
-    document.getElementById('completedTasks').textContent = stats.completed;
-    
-    // Обновляем списки задач
-    const todayTasks = tasks.filter(task => isToday(task.deadline));
-    const urgentTasks = tasks.filter(task => task.priority === 'HIGH');
-    
-    renderTaskList('todayTasks', todayTasks);
-    renderTaskList('urgentTasks', urgentTasks);
+function renderDashboard(tasks) {
+    const todayTasks = document.getElementById('todayTasks');
+    const urgentTasks = document.getElementById('urgentTasks');
+    if (!todayTasks || !urgentTasks) return;
+
+    // Фильтруем задачи
+    const today = new Date();
+    const todaysList = tasks.filter(task => {
+        const taskDate = new Date(task.deadline);
+        return taskDate.toDateString() === today.toDateString();
+    });
+
+    const urgentList = tasks.filter(task => 
+        task.priority === 'HIGH' && task.status !== 'DONE'
+    );
+
+    // Рендерим задачи
+    todayTasks.innerHTML = renderTaskList(todaysList);
+    urgentTasks.innerHTML = renderTaskList(urgentList);
 }
 
 document.addEventListener('DOMContentLoaded', loadDashboard); 

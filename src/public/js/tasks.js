@@ -17,6 +17,10 @@ async function loadTasks() {
         if (!Array.isArray(tasks)) {
             throw new Error('Tasks data is not an array');
         }
+        const grid = document.getElementById('tasksGrid');
+        if (!grid) {
+            throw new Error('Tasks grid element not found');
+        }
         renderTasks(tasks);
     } catch (error) {
         console.error('Error loading tasks:', error);
@@ -25,6 +29,8 @@ async function loadTasks() {
 
 function renderTasks(tasks) {
     const grid = document.getElementById('tasksGrid');
+    if (!grid) return;
+
     grid.innerHTML = tasks.map(task => `
         <div class="task-card ${task.status.toLowerCase()}">
             <h3>${task.title}</h3>
@@ -34,9 +40,9 @@ function renderTasks(tasks) {
                 ${task.deadline ? `<span class="deadline">⏰ ${new Date(task.deadline).toLocaleDateString()}</span>` : ''}
             </div>
             <div class="task-actions">
-                <button onclick="updateTaskStatus('${task.id}', 'DONE')">✅</button>
-                <button onclick="editTask('${task.id}')">✏️</button>
-                <button onclick="deleteTask('${task.id}')">🗑️</button>
+                <button onclick="updateTaskStatus('${task.id}', 'DONE')" class="action-btn">✅</button>
+                <button onclick="editTask('${task.id}')" class="action-btn">✏️</button>
+                <button onclick="deleteTask('${task.id}')" class="action-btn">🗑️</button>
             </div>
         </div>
     `).join('');
