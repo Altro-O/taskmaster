@@ -10,37 +10,13 @@ class NotificationService {
     }
 
     async startScheduler() {
-        // Проверка дедлайнов каждый час
-        schedule.scheduleJob('0 * * * *', async () => {
+        // Проверка дедлайнов каждые 5 минут
+        schedule.scheduleJob('*/5 * * * *', async () => {
             const now = new Date();
-            const dayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            
             const tasks = await Task.findAll({
                 where: {
                     deadline: {
-                        [Op.between]: [now, dayFromNow]
-                    },
-                    status: {
-                        [Op.ne]: 'DONE'
-                    }
-                },
-                include: [User]
-            });
-
-            for (const task of tasks) {
-                if (task.User?.telegramId) {
-                    const timeLeft = Math.round((new Date(task.deadline) - now) / (1000 * 60 * 60));
-                    await this.sendDeadlineReminder(task.User.telegramId, task, timeLeft);
-                }
-            }
-        });
-
-        // Проверка просроченных задач
-        schedule.scheduleJob('0 9 * * *', async () => {
-            const tasks = await Task.findAll({
-                where: {
-                    deadline: {
-                        [Op.lt]: new Date()
+                        [Op.lt]: now
                     },
                     status: {
                         [Op.ne]: 'DONE'
@@ -57,20 +33,9 @@ class NotificationService {
         });
     }
 
-    async sendDeadlineReminder(userId, task, hoursLeft) {
-        const message = `
-⚠️ Напоминание о задаче!
-
-📝 ${task.title}
-⏰ До дедлайна осталось: ${hoursLeft} часов
-Дедлайн: ${new Date(task.deadline).toLocaleString()}
-`;
-        await this.bot.sendMessage(userId, message);
-    }
-
     async sendOverdueNotification(userId, task) {
         const message = `
-🚨 Просроченная задача!
+🚨 Задача просрочена!
 
 📝 ${task.title}
 ⏰ Дедлайн был: ${new Date(task.deadline).toLocaleString()}
@@ -120,7 +85,7 @@ ${achievement.description}
             user.settings.notificationTime = time;
             await user.save();
 
-            // О��новляем расписание для этого пользователя
+            // Обновляем расписание для этого пользователя
             this.scheduleUserNotifications(user);
 
             await this.bot.sendMessage(userId, 

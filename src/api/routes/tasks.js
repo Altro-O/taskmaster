@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Task } = require('../../models');
+const { Task, User } = require('../../models');
 
 // Получение задач
 router.get('/', async (req, res) => {
@@ -29,19 +29,39 @@ router.post('/', async (req, res) => {
     }
 });
 
-// Обновление задачи
+// Обновление статуса задачи
 router.patch('/:id', async (req, res) => {
     try {
         const task = await Task.findOne({
-            where: { id: req.params.id, UserId: req.user.id }
+            where: { 
+                id: req.params.id,
+                UserId: req.user.id
+            }
         });
+
         if (!task) {
             return res.status(404).json({ error: 'Task not found' });
         }
-        await task.update(req.body);
+
+        await task.update({ status: req.body.status });
+
+        // Если задача выполнена, начисляем очки
+        if (req.body.status === 'DONE') {
+            const user = await User.findByPk(req.user.id);
+            if (user) {
+                user.stats = {
+                    ...user.stats,
+                    tasksCompleted: (user.stats?.tasksCompleted || 0) + 1,
+                    points: (user.stats?.points || 0) + 10
+                };
+                await user.save();
+            }
+        }
+
         res.json(task);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to update task' });
+        console.error('Error updating task:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
