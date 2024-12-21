@@ -1,50 +1,43 @@
 const { User } = require('../models');
 
 class GameService {
-    constructor() {
-        this.achievementTypes = {
-            TASKS_COMPLETED: {
-                levels: [5, 20, 50, 100],
-                points: [10, 50, 100, 200]
-            },
-            PRIORITY_MASTER: {
-                levels: [5, 15, 30, 50],
-                points: [20, 60, 120, 200]
-            }
+    static async getUserLevel(userId) {
+        const user = await User.findOne({
+            where: { telegramId: userId.toString() }
+        });
+
+        if (!user) {
+            return {
+                level: 1,
+                points: 0,
+                progress: 0
+            };
+        }
+
+        const points = user.stats?.points || 0;
+        const level = Math.floor(Math.sqrt(points / 100)) + 1;
+        const nextLevel = Math.pow(level, 2) * 100;
+        const progress = Math.round((points / nextLevel) * 100);
+
+        return {
+            level,
+            points,
+            progress
         };
     }
 
-    async getUserLevel(userId) {
-        try {
-            const user = await User.findOne({
-                where: { telegramId: userId }
-            });
+    static async addPoints(userId, points) {
+        const user = await User.findOne({
+            where: { telegramId: userId.toString() }
+        });
 
-            const points = user.stats.points || 0;
-            const level = Math.floor(Math.sqrt(points / 100)) + 1;
-
-            return {
-                level,
-                points,
-                nextLevel: level + 1,
-                progress: Math.round((points / (level * 100)) * 100)
+        if (user) {
+            user.stats = {
+                ...user.stats,
+                points: (user.stats?.points || 0) + points
             };
-        } catch (error) {
-            console.error('Error getting level:', error);
-            throw error;
+            await user.save();
         }
-    }
-
-    async checkAchievements(userId) {
-        // Проверка и выдача достижений
-    }
-    
-    async updateLeaderboard() {
-        // Обновление таблицы лидеров
-    }
-    
-    async calculatePoints(userId) {
-        // Подсчет очков
     }
 }
 
