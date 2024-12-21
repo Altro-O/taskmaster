@@ -3,6 +3,8 @@ const botService = require('./bot');
 const app = require('./api/server');
 const db = require('./models');
 const config = require('./config/config');
+const NotificationService = require('./services/NotificationService');
+const SyncService = require('./services/SyncService');
 
 console.log('Starting server...');
 console.log('Syncing database...');
@@ -10,6 +12,16 @@ console.log('Syncing database...');
 db.sequelize.sync()
     .then(async () => {
         console.log('Database synced');
+
+        // Инициализируем сервисы
+        const notificationService = new NotificationService(botService.bot);
+        const syncService = new SyncService(botService.bot);
+
+        // Добавляем в глобальный контекст
+        global.services = {
+            notification: notificationService,
+            sync: syncService
+        };
 
         // Запуск API сервера
         app.listen(config.api.port, () => {
