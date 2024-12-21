@@ -8,8 +8,8 @@ module.exports = {
     max_memory_restart: '1G',
     env_production: {
       NODE_ENV: 'production',
-      DOMAIN: 'mytasks.store',
-      API_PORT: 3000
+      PORT: 3000,
+      WEBHOOK_PORT: 3001
     }
   }]
 }; 

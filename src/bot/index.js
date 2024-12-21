@@ -1,27 +1,21 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { User } = require('../models');
-const botConfig = require('../config/bot');
+const config = require('../config/config');
 
 class TelegramBotService {
     constructor() {
-        const options = this.getOptions();
-        this.bot = new TelegramBot(botConfig.token, options);
+        this.bot = new TelegramBot(config.telegram.token, {
+            polling: {
+                interval: 300,
+                autoStart: true,
+                params: {
+                    timeout: 10
+                }
+            }
+        });
+
         this.setupErrorHandling();
         this.setupCommands();
-    }
-
-    getOptions() {
-        if (botConfig.mode === 'webhook') {
-            return {
-                webHook: {
-                    port: botConfig.webhook.port,
-                    cert: botConfig.webhook.certificate
-                }
-            };
-        }
-        return {
-            polling: botConfig.polling
-        };
     }
 
     setupErrorHandling() {
@@ -30,7 +24,7 @@ class TelegramBotService {
             this.handleError(error);
         });
 
-        if (botConfig.mode === 'polling') {
+        if (config.mode === 'polling') {
             this.bot.on('polling_error', (error) => {
                 console.error('Polling error:', error.code);
                 this.handleError(error);
@@ -42,7 +36,7 @@ class TelegramBotService {
         if (error.code === 'ETELEGRAM' || error.code === 'ECONNRESET') {
             setTimeout(() => {
                 console.log('Attempting to reconnect...');
-                if (botConfig.mode === 'polling') {
+                if (config.mode === 'polling') {
                     this.bot.stopPolling()
                         .then(() => this.bot.startPolling())
                         .catch(console.error);
@@ -55,10 +49,10 @@ class TelegramBotService {
     }
 
     async setupWebhook() {
-        if (botConfig.mode === 'webhook') {
+        if (config.mode === 'webhook') {
             try {
-                await this.bot.setWebHook(botConfig.webhook.url, {
-                    certificate: botConfig.webhook.certificate
+                await this.bot.setWebHook(config.webhook.url, {
+                    certificate: config.webhook.certificate
                 });
                 console.log('Webhook set successfully');
             } catch (error) {
@@ -103,7 +97,7 @@ class TelegramBotService {
     }
 
     async start() {
-        if (botConfig.mode === 'webhook') {
+        if (config.mode === 'webhook') {
             return this.setupWebhook();
         } else {
             return this.bot.startPolling();
