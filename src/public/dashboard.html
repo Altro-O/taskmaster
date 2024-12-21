@@ -22,35 +22,63 @@
         </nav>
         <main class="content">
             <header class="dashboard-header">
-                <h1>Панель управления</h1>
-                <button class="new-task-btn" onclick="createTask()">+ Новая задача</button>
+                <div class="header-title">
+                    <h1>Панель управления</h1>
+                    <div class="tooltip">
+                        <span class="tooltip-icon">?</span>
+                        <div class="tooltip-content">
+                            Здесь вы можете видеть общий обзор ваших задач, статистику и быстрые действия
+                        </div>
+                    </div>
+                </div>
+                <button class="new-task-btn">
+                    <i class="fas fa-plus"></i>
+                    Новая задача
+                </button>
             </header>
-            <div class="dashboard-grid">
-                <div class="card tasks-overview">
+            <div class="dashboard-overview">
+                <div class="section-header">
                     <h2>Обзор задач</h2>
-                    <div id="tasksOverview"></div>
-                </div>
-                <div class="card stats-overview">
-                    <h2>Статистика</h2>
-                    <div id="statsOverview"></div>
-                </div>
-            </div>
-            <div class="task-overview">
-                <div class="task-card">
-                    <h3>Задачи на сегодня</h3>
-                    <div id="todayTasks" class="task-list">
-                        <!-- Задачи будут добавляться динамически -->
+                    <div class="tooltip">
+                        <span class="tooltip-icon">?</span>
+                        <div class="tooltip-content">
+                            Показывает ваши текущие задачи на сегодня и срочные задачи, требующие внимания
+                        </div>
                     </div>
                 </div>
                 
-                <div class="task-card">
-                    <h3>Срочные задачи</h3>
-                    <div id="urgentTasks" class="task-list">
-                        <!-- Срочные задачи -->
+                <div class="task-grid">
+                    <div class="task-section">
+                        <h3>
+                            Задачи на сегодня
+                            <div class="tooltip">
+                                <span class="tooltip-icon">?</span>
+                                <div class="tooltip-content">
+                                    Задачи, запланированные на сегодня. Нажмите на задачу для подробностей
+                                </div>
+                            </div>
+                        </h3>
+                        <div id="todayTasks" class="task-list">
+                            <!-- Задачи -->
+                        </div>
+                    </div>
+                    
+                    <div class="task-section">
+                        <h3>
+                            Срочные задачи
+                            <div class="tooltip">
+                                <span class="tooltip-icon">?</span>
+                                <div class="tooltip-content">
+                                    Задачи с высоким приоритетом, требующие скорейшего выполнения
+                                </div>
+                            </div>
+                        </h3>
+                        <div id="urgentTasks" class="task-list">
+                            <!-- Задачи -->
+                        </div>
                     </div>
                 </div>
             </div>
-
             <div class="stats-overview">
                 <div class="stats-card">
                     <h3>Статистика</h3>

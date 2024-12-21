@@ -1,5 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
-const { User } = require('../models');
+const { User, Task } = require('../models');
 const config = require('../config/config');
 
 class TelegramBotService {
@@ -13,6 +13,10 @@ class TelegramBotService {
                 }
             }
         });
+
+        this.waitingForTaskTitle = {};
+        this.waitingForDeadline = {};
+        this.waitingForPriority = {};
 
         this.setupErrorHandling();
         this.setupCommands();
@@ -65,15 +69,102 @@ class TelegramBotService {
     setupCommands() {
         this.bot.onText(/\/start/, this.handleStart.bind(this));
         
-        // Добавляем обработку обновлений задач
-        this.bot.on('message', async (msg) => {
+        // Новая задача
+        this.bot.onText(/📝 Новая задача/, async (msg) => {
+            const chatId = msg.chat.id;
+            await this.bot.sendMessage(chatId, 'Введите название задачи:');
+            // Ждем ответ пользователя
+            this.waitingForTaskTitle[chatId] = true;
+        });
+
+        // Мои задачи
+        this.bot.onText(/📋 Мои задачи/, async (msg) => {
+            const chatId = msg.chat.id;
             const user = await User.findOne({
-                where: { telegramId: msg.from.id.toString() }
+                where: { telegramId: chatId.toString() }
             });
             
             if (user) {
-                // Обрабатываем сообщение и обновляем задачи
+                const tasks = await Task.findAll({
+                    where: { UserId: user.id }
+                });
+                
+                if (tasks.length > 0) {
+                    const taskList = tasks.map(task => 
+                        `${task.status === 'DONE' ? '✅' : '⏳'} ${task.title}`
+                    ).join('\n');
+                    await this.bot.sendMessage(chatId, `Ваши задачи:\n\n${taskList}`);
+                } else {
+                    await this.bot.sendMessage(chatId, 'У вас пока нет задач');
+                }
             }
+        });
+
+        // Статистика
+        this.bot.onText(/📊 Статистика/, async (msg) => {
+            const chatId = msg.chat.id;
+            const user = await User.findOne({
+                where: { telegramId: chatId.toString() }
+            });
+            
+            if (user) {
+                const stats = `
+📊 Ваша статистика:
+
+✅ Выполнено задач: ${user.stats.tasksCompleted}
+📝 Всего задач: ${user.stats.totalTasks}
+⭐️ Очки: ${user.stats.points}
+                `;
+                await this.bot.sendMessage(chatId, stats);
+            }
+        });
+
+        // Обработка текстовых сообщений
+        this.bot.on('message', async (msg) => {
+            const chatId = msg.chat.id;
+            
+            if (this.waitingForTaskTitle[chatId]) {
+                // Создаем новую задачу
+                const user = await User.findOne({
+                    where: { telegramId: chatId.toString() }
+                });
+                
+                if (user) {
+                    await Task.create({
+                        title: msg.text,
+                        UserId: user.id,
+                        status: 'TODO'
+                    });
+                    
+                    await this.bot.sendMessage(chatId, 'Задача создана! ✅');
+                }
+                
+                delete this.waitingForTaskTitle[chatId];
+            }
+        });
+
+        this.bot.onText(/💝 Поддержать проект/, async (msg) => {
+            const chatId = msg.chat.id;
+            const donateText = `
+💝 *Поддержать TaskMaster*
+
+Если вам нравится бот и он помогает вам быть продуктивнее, вы можете поддержать развитие проекта.
+
+Ваша поддержка поможет нам:
+• Добавлять новые функции
+• Улучшать существующие возможности
+• Поддерживать сервер и инфраструктуру
+
+💳 Поддержать через Tinkoff:
+[Открыть страницу оплаты](https://www.tinkoff.ru/rm/r_NCNolaNuEd.LikyLscelb/DsIeH14488)
+
+Спасибо за вашу поддержку! ❤️
+            `;
+            
+            await this.bot.sendMessage(chatId, donateText, {
+                parse_mode: 'Markdown',
+                disable_web_page_preview: true
+            });
         });
     }
 
