@@ -119,17 +119,22 @@ router.post('/link-telegram', authMiddleware, async (req, res) => {
 router.post('/telegram', async (req, res) => {
     try {
         console.log('Received auth request:', req.body);
-        const { id, first_name, username, photo_url, auth_date, hash } = req.body;
+        const { id, first_name, username } = req.body;
 
         if (!id) {
             console.error('Missing telegram id');
             return res.status(400).json({ error: 'Missing telegram id' });
         }
 
-        // Создаем или находим пользователя
-        const [user, created] = await User.findOrCreate({
-            where: { telegramId: id.toString() },
-            defaults: {
+        // Сначала ищем пользователя
+        let user = await User.findOne({
+            where: { telegramId: id.toString() }
+        });
+
+        // Если нет - создаем
+        if (!user) {
+            user = await User.create({
+                telegramId: id.toString(),
                 username: username || first_name,
                 settings: {
                     notifications: true,
@@ -140,10 +145,8 @@ router.post('/telegram', async (req, res) => {
                     totalTasks: 0,
                     points: 0
                 }
-            }
-        });
-
-        console.log('User found/created:', { userId: user.id, isNew: created });
+            });
+        }
 
         // Создаем JWT токен
         const token = jwt.sign(
@@ -152,7 +155,6 @@ router.post('/telegram', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // Отправляем ответ
         res.json({
             success: true,
             token,
