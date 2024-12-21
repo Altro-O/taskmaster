@@ -145,4 +145,6 @@ ${tasks.map(t => `${t.status === 'DONE' ? '✅' : '⏳'} ${t.title}`).join('\n')
             console.error('Error sending daily report:', error);
         }
     }
-} 
+}
+
+module.exports = NotificationService; 
