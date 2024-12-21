@@ -1,6 +1,9 @@
 const TelegramBot = require('node-telegram-bot-api');
-const { User, Task } = require('../models');
+const { User, Task, Template, Achievement } = require('../models');
 const config = require('../config/config');
+const AnalyticsService = require('../services/AnalyticsService');
+const ReportService = require('../services/ReportService');
+const GameService = require('../services/GameService');
 
 class TelegramBotService {
     constructor() {
@@ -17,9 +20,16 @@ class TelegramBotService {
         this.waitingForTaskTitle = {};
         this.waitingForDeadline = {};
         this.waitingForPriority = {};
+        this.waitingForReportTime = {};
 
         this.setupErrorHandling();
         this.setupCommands();
+
+        console.log('Services initialized:');
+        console.log('- Notification Service');
+        console.log('- Sync Service');
+        console.log('- Game Service');
+        console.log('- Analytics Service');
     }
 
     setupErrorHandling() {
@@ -166,6 +176,87 @@ class TelegramBotService {
                 disable_web_page_preview: true
             });
         });
+
+        // Шаблоны
+        this.bot.onText(/📋 Шаблоны/, async (msg) => {
+            const chatId = msg.chat.id;
+            const templates = await Template.findAll({
+                where: { UserId: msg.from.id.toString() }
+            });
+            
+            const keyboard = templates.map(t => [{
+                text: t.title,
+                callback_data: `template_${t.id}`
+            }]);
+            
+            await this.bot.sendMessage(chatId, 'Ваши шаблоны:', {
+                reply_markup: { inline_keyboard: keyboard }
+            });
+        });
+
+        // Аналитика в боте
+        this.bot.onText(/📊 Аналитика/, async (msg) => {
+            const chatId = msg.chat.id;
+            const stats = await AnalyticsService.getTasksStats(msg.from.id);
+            
+            const report = `
+📊 *Ваша статистика*
+✅ Выполнено: ${stats.completed}
+📝 Всего задач: ${stats.total}
+⏳ В процессе: ${stats.inProgress}
+📅 План: ${stats.todo}
+
+🏆 *Достижения*:
+${await this.getAchievements(msg.from.id)}
+            `;
+            
+            await this.bot.sendMessage(chatId, report, {
+                parse_mode: 'Markdown'
+            });
+        });
+
+        this.bot.onText(/📊 Отчет/, async (msg) => {
+            const chatId = msg.chat.id;
+            const report = await ReportService.generatePDFReport({
+                userId: msg.from.id
+            });
+            await this.bot.sendDocument(chatId, report);
+        });
+
+        this.bot.onText(/🏆 Достижения/, async (msg) => {
+            const chatId = msg.chat.id;
+            const gameStats = await GameService.getUserLevel(msg.from.id);
+            const message = `
+🎮 Ваш прогресс:
+Уровень: ${gameStats.level}
+Очки: ${gameStats.points}
+Прогресс до следующего уровня: ${gameStats.progress}%
+
+🏆 Достижения:
+${await this.formatAchievements(msg.from.id)}
+            `;
+            await this.bot.sendMessage(chatId, message);
+        });
+
+        this.bot.onText(/⚙️ Настройки/, async (msg) => {
+            const chatId = msg.chat.id;
+            const keyboard = {
+                inline_keyboard: [
+                    [{ text: '🔔 Уведомления', callback_data: 'settings_notifications' }],
+                    [{ text: '🌙 Тема', callback_data: 'settings_theme' }],
+                    [{ text: '⏰ Время отчетов', callback_data: 'settings_reports' }]
+                ]
+            };
+            await this.bot.sendMessage(chatId, 'Настройки:', { reply_markup: keyboard });
+        });
+
+        this.bot.on('callback_query', async (query) => {
+            const chatId = query.message.chat.id;
+            
+            if (query.data.startsWith('settings_')) {
+                await this.handleSettings(chatId, query.data);
+            }
+        });
     }
 
     async handleStart(msg) {
@@ -191,7 +282,18 @@ class TelegramBotService {
                 });
             }
 
-            await this.bot.sendMessage(chatId, 'Добро пожаловать в TaskMaster! 🚀');
+            const keyboard = {
+                keyboard: [
+                    ['📝 Новая задача', '📋 Мои задачи'],
+                    ['📊 Статистика', '🏆 Достижения'],
+                    ['⚙️ Настройки', '💝 Поддержать проект']
+                ],
+                resize_keyboard: true
+            };
+
+            await this.bot.sendMessage(chatId, 'Выберите действие:', {
+                reply_markup: keyboard
+            });
         } catch (error) {
             console.error('Error in handleStart:', error);
             await this.bot.sendMessage(chatId, 'Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.');
@@ -211,6 +313,51 @@ class TelegramBotService {
         } catch (error) {
             console.error('Error starting bot:', error);
             throw error;
+        }
+    }
+
+    async formatAchievements(userId) {
+        const achievements = await Achievement.findAll({
+            where: { UserId: userId, completed: true }
+        });
+        
+        if (achievements.length === 0) {
+            return 'У вас пока нет достижений';
+        }
+        
+        return achievements.map(a => 
+            `🏅 ${a.title} (${a.points} очков)`
+        ).join('\n');
+    }
+
+    async handleSettings(chatId, action) {
+        const user = await User.findOne({
+            where: { telegramId: chatId.toString() }
+        });
+
+        switch (action) {
+            case 'settings_notifications':
+                user.settings.notifications = !user.settings.notifications;
+                await user.save();
+                await this.bot.sendMessage(chatId, 
+                    `Уведомления ${user.settings.notifications ? 'включены' : 'выключены'}`
+                );
+                break;
+
+            case 'settings_theme':
+                user.settings.theme = user.settings.theme === 'light' ? 'dark' : 'light';
+                await user.save();
+                await this.bot.sendMessage(chatId, 
+                    `Тема изменена на ${user.settings.theme === 'light' ? 'светлую' : 'темную'}`
+                );
+                break;
+
+            case 'settings_reports':
+                await this.bot.sendMessage(chatId, 
+                    'Выберите время для отчетов (например, 18:00):'
+                );
+                this.waitingForReportTime[chatId] = true;
+                break;
         }
     }
 }

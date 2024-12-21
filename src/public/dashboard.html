@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body class="dashboard-page">
     <div class="dashboard">
@@ -19,6 +20,14 @@
                 <li><a href="/projects.html">📁 Проекты</a></li>
                 <li><a href="/stats.html">📈 Статистика</a></li>
             </ul>
+            <div class="bottom-menu">
+                <a href="#" class="donate-btn" onclick="showDonateModal()">
+                    💝 Поддержать проект
+                </a>
+                <a href="#" class="logout-btn" onclick="logout()">
+                    🚪 Выйти
+                </a>
+            </div>
         </nav>
         <main class="content">
             <header class="dashboard-header">
@@ -96,7 +105,83 @@
             </div>
         </main>
     </div>
+    <div id="createTaskModal" class="modal">
+        <div class="modal-content">
+            <h2>Новая задача</h2>
+            <form onsubmit="submitTask(event)">
+                <div class="form-group">
+                    <label>Название</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Приоритет</label>
+                    <select name="priority">
+                        <option value="LOW">Низкий</option>
+                        <option value="MEDIUM">Средний</option>
+                        <option value="HIGH">Высокий</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Дедлайн</label>
+                    <input type="datetime-local" name="deadline">
+                </div>
+                <button type="submit" class="submit-btn">Создать</button>
+            </form>
+        </div>
+    </div>
+    <div id="donateModal" class="modal">
+        <div class="modal-content">
+            <h2>💝 Поддержать проект</h2>
+            <div class="donate-description">
+                <p>Если вам нравится TaskMaster и он помогает вам быть продуктивнее, вы можете поддержать развитие проекта.</p>
+                <p>Ваша поддержка поможет нам:</p>
+                <ul>
+                    <li>🚀 Добавлять новые функции</li>
+                    <li>🛠 Улучшать существующие возможности</li>
+                    <li>💪 Поддерживать сервер и инфраструктуру</li>
+                </ul>
+            </div>
+            <div class="donate-option">
+                <img src="/images/tinkoff.png" alt="Tinkoff">
+                <a href="https://www.tinkoff.ru/rm/r_NCNolaNuEd.LikyLscelb/DsIeH14488" 
+                   class="donate-btn" 
+                   target="_blank">
+                    Поддержать через Tinkoff
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="settings-btn" onclick="showSettings()">
+        <i class="fas fa-cog"></i>
+    </div>
+
+    <!-- Модальное окно настроек -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h2>Настройки</h2>
+            <div class="settings-group">
+                <label>
+                    <input type="checkbox" id="notificationsToggle" onchange="updateSettings('notifications')">
+                    Уведомления
+                </label>
+            </div>
+            <div class="settings-group">
+                <label>
+                    <input type="checkbox" id="themeToggle" onchange="updateSettings('theme')">
+                    Темная тема
+                </label>
+            </div>
+            <div class="settings-group">
+                <label>
+                    Время отчетов:
+                    <input type="time" id="reportTime" onchange="updateSettings('reportTime')">
+                </label>
+            </div>
+        </div>
+    </div>
     <script src="/js/auth.js"></script>
     <script src="/js/dashboard.js"></script>
+    <script src="/js/checkAuth.js"></script>
+    <script src="/js/tasks.js"></script>
 </body>
 </html> 
