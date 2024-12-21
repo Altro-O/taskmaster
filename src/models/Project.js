@@ -11,7 +11,8 @@ module.exports = (sequelize) => {
                 description: DataTypes.TEXT,
                 status: {
                     type: DataTypes.ENUM('TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'),
-                    defaultValue: 'TODO'
+                    defaultValue: 'TODO',
+                    allowNull: false
                 },
                 deadline: DataTypes.DATE
             }, {
