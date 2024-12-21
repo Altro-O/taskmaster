@@ -1,31 +1,30 @@
 function onTelegramAuth(user) {
-    console.log('Telegram auth data:', user);
+    console.log('Telegram auth data received:', user);
 
     if (!user) {
         console.error('No user data received from Telegram');
+        showAuthError('Ошибка получения данных пользователя');
         return;
     }
 
-    // Показываем индикатор загрузки
-    const authSection = document.querySelector('.auth-section');
-    const loadingDiv = document.createElement('div');
-    loadingDiv.className = 'loading';
-    loadingDiv.textContent = 'Выполняется вход...';
-    authSection.appendChild(loadingDiv);
+    // Предотвращаем обновление страницы
+    event.preventDefault();
 
-    // Отправляем запрос на сервер
-    fetch('/api/auth/telegram', {
+    showLoading();
+    
+    fetch('https://mytasks.store/api/auth/telegram', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify(user)
+        body: JSON.stringify(user),
+        credentials: 'include'
     })
-    .then(res => {
-        console.log('Auth response:', res.status);
-        return res.json().then(data => {
-            if (!res.ok) throw new Error(data.error || 'Authentication failed');
+    .then(response => {
+        console.log('Auth response status:', response.status);
+        return response.json().then(data => {
+            if (!response.ok) throw new Error(data.error || 'Authentication failed');
             return data;
         });
     })
@@ -39,11 +38,32 @@ function onTelegramAuth(user) {
             throw new Error('No token received');
         }
     })
-    .catch(err => {
-        console.error('Auth error:', err);
-        loadingDiv.remove();
-        alert('Ошибка авторизации: ' + err.message);
-    });
+    .catch(error => {
+        console.error('Auth error:', error);
+        showAuthError(error.message);
+    })
+    .finally(hideLoading);
+}
+
+function showLoading() {
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'auth-loading';
+    loadingDiv.className = 'loading';
+    loadingDiv.textContent = 'Выполняется вход...';
+    document.querySelector('.auth-section').appendChild(loadingDiv);
+}
+
+function hideLoading() {
+    const loadingDiv = document.getElementById('auth-loading');
+    if (loadingDiv) loadingDiv.remove();
+}
+
+function showAuthError(message) {
+    const authStatus = document.getElementById('auth-status');
+    authStatus.textContent = 'Ошибка авторизации: ' + message;
+    authStatus.style.backgroundColor = '#fee2e2';
+    authStatus.style.color = '#dc2626';
+    authStatus.style.padding = '10px';
 }
 
 // Добавляем отладочную информацию

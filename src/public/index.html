@@ -2,111 +2,31 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>TaskMaster - Управление задачами в Telegram</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster - Авторизация</title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .features-list {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-        
-        .features-list.expanded {
-            max-height: 1000px;
-        }
-        
-        .features h2 {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px;
-        }
-        
-        .features h2:after {
-            content: '▼';
-            font-size: 0.8em;
-            transition: transform 0.3s;
-        }
-        
-        .features h2.expanded:after {
-            transform: rotate(180deg);
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <img src="/images/logo.png" alt="TaskMaster Logo" class="logo">
-        <h1>TASKMASTER</h1>
-        <p>Эффективное управление задачами прямо в Telegram</p>
-
-        <div class="auth-section">
+    <div class="auth-section">
+        <h1 class="auth-title">Войти в TaskMaster</h1>
+        <p class="auth-description">
+            Используйте свой аккаунт Telegram для быстрого входа в систему
+        </p>
+        
+        <form id="auth-form" onsubmit="return false;">
             <!-- Telegram Login Widget -->
             <script async 
                 src="https://telegram.org/js/telegram-widget.js?22" 
                 data-telegram-login="taskmaster_altro_bot" 
                 data-size="large" 
                 data-radius="10"
-                data-auth-url="https://mytasks.store/api/auth/telegram"
-                data-request-access="write"
-                onauth="onTelegramAuth(user)">
+                data-onauth="onTelegramAuth(user)"
+                data-request-access="write">
             </script>
-            <div id="auth-status"></div>
-        </div>
-
-        <div class="features">
-            <button class="features-button" onclick="toggleFeatures(this)">
-                Возможности
-            </button>
-            <div class="features-content">
-                <div class="feature-category">
-                    <h3>📋 Управление задачами</h3>
-                    <ul>
-                        <li>Создание и редактирование задач</li>
-                        <li>Отслеживание статуса выполнения</li>
-                        <li>Установка приоритетов</li>
-                        <li>Управление дедлайнами</li>
-                    </ul>
-                </div>
-
-                <div class="feature-category">
-                    <h3>📁 Проекты</h3>
-                    <ul>
-                        <li>Группировка задач по проектам</li>
-                        <li>Совместная работа</li>
-                        <li>Отслеживание прогресса проекта</li>
-                    </ul>
-                </div>
-
-                <div class="feature-category">
-                    <h3>⏰ Напоминания</h3>
-                    <ul>
-                        <li>Уведомления о дедлайнах</li>
-                        <li>Ежедневные напоминания</li>
-                        <li>Напоминания о важных задачах</li>
-                    </ul>
-                </div>
-
-                <div class="feature-category">
-                    <h3>📊 Аналитика</h3>
-                    <ul>
-                        <li>Статистика выполнения задач</li>
-                        <li>Система достижений</li>
-                        <li>Отчеты о продуктивности</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <a href="https://t.me/taskmaster_altro_bot" class="bot-link">Открыть бота в Telegram</a>
+        </form>
+        
+        <div id="auth-status"></div>
     </div>
-
-    <script>
-        function toggleFeatures(element) {
-            element.classList.toggle('expanded');
-            element.nextElementSibling.classList.toggle('expanded');
-        }
-    </script>
     <script src="/js/auth.js"></script>
 </body>
 </html> 
