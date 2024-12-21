@@ -4,35 +4,39 @@ class KanbanBoard {
         this.init();
     }
 
-    async loadTasks() {
-        const token = localStorage.getItem('token');
-        const response = await fetch('/api/tasks', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const tasks = await response.json();
-        this.renderTasks(tasks);
-    }
-
-    renderTasks(tasks) {
+    init() {
         this.columns.forEach(column => {
             const columnEl = document.getElementById(column.toLowerCase());
-            columnEl.innerHTML = '';
-            
-            const columnTasks = tasks.filter(t => t.status === column);
-            columnTasks.forEach(task => {
-                columnEl.appendChild(this.createTaskCard(task));
-            });
+            this.setupDragAndDrop(columnEl);
         });
+        this.loadTasks();
+    }
+
+    setupDragAndDrop(column) {
+        column.addEventListener('dragstart', this.handleDragStart.bind(this));
+        column.addEventListener('dragover', this.handleDragOver.bind(this));
+        column.addEventListener('drop', this.handleDrop.bind(this));
     }
 
     handleDragStart(e) {
         e.dataTransfer.setData('text/plain', e.target.id);
     }
 
-    handleDrop(e) {
+    handleDragOver(e) {
+        e.preventDefault();
+    }
+
+    async handleDrop(e) {
+        e.preventDefault();
         const taskId = e.dataTransfer.getData('text/plain');
-        const newStatus = e.target.id;
-        this.updateTaskStatus(taskId, newStatus);
+        const newStatus = e.target.closest('.kanban-column').id.toUpperCase();
+
+        try {
+            await this.updateTaskStatus(taskId, newStatus);
+            await this.loadTasks();
+        } catch (error) {
+            console.error('Error updating task status:', error);
+        }
     }
 
     createTaskCard(task) {
