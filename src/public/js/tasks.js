@@ -93,9 +93,11 @@ async function updateTaskStatus(taskId, status) {
             body: JSON.stringify({ status })
         });
 
-        if (response.ok) {
-            loadTasks(); // Перезагружаем список задач
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        await loadTasks(); // Перезагружаем список задач
     } catch (error) {
         console.error('Error updating task:', error);
     }
@@ -166,9 +168,11 @@ async function deleteTask(taskId) {
                 }
             });
 
-            if (response.ok) {
-                loadTasks();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+
+            await loadTasks();
         } catch (error) {
             console.error('Error deleting task:', error);
         }

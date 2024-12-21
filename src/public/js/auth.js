@@ -66,6 +66,11 @@ function showAuthError(message) {
     authStatus.style.padding = '10px';
 }
 
+function logout() {
+    localStorage.removeItem('token');
+    window.location.href = '/login.html';
+}
+
 // Добавляем отладочную информацию
 console.log('Auth script loaded');
 window.addEventListener('load', () => {
