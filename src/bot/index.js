@@ -302,11 +302,12 @@ ${await this.formatAchievements(msg.from.id)}
 
     async start() {
         try {
-            if (this.bot.options.polling) {
-                return this.bot.startPolling();
+            if (config.mode === 'polling') {
+                await this.bot.startPolling();
             } else if (config.mode === 'webhook') {
-                return this.setupWebhook();
+                await this.setupWebhook();
             }
+            console.log('Bot started successfully');
         } catch (error) {
             console.error('Error starting bot:', error);
             throw error;
