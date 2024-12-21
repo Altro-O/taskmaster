@@ -64,6 +64,17 @@ class TelegramBotService {
 
     setupCommands() {
         this.bot.onText(/\/start/, this.handleStart.bind(this));
+        
+        // Добавляем обработку обновлений задач
+        this.bot.on('message', async (msg) => {
+            const user = await User.findOne({
+                where: { telegramId: msg.from.id.toString() }
+            });
+            
+            if (user) {
+                // Обрабатываем сообщение и обновляем задачи
+            }
+        });
     }
 
     async handleStart(msg) {
@@ -97,10 +108,18 @@ class TelegramBotService {
     }
 
     async start() {
-        if (config.mode === 'webhook') {
-            return this.setupWebhook();
-        } else {
-            return this.bot.startPolling();
+        try {
+            // Проверяем, нет ли уже запущенного бота
+            await this.bot.deleteWebhook();
+            
+            if (config.mode === 'webhook') {
+                return this.setupWebhook();
+            } else {
+                return this.bot.startPolling();
+            }
+        } catch (error) {
+            console.error('Error starting bot:', error);
+            throw error;
         }
     }
 }

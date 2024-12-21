@@ -35,6 +35,37 @@
                     <div id="statsOverview"></div>
                 </div>
             </div>
+            <div class="task-overview">
+                <div class="task-card">
+                    <h3>Задачи на сегодня</h3>
+                    <div id="todayTasks" class="task-list">
+                        <!-- Задачи будут добавляться динамически -->
+                    </div>
+                </div>
+                
+                <div class="task-card">
+                    <h3>Срочные задачи</h3>
+                    <div id="urgentTasks" class="task-list">
+                        <!-- Срочные задачи -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-overview">
+                <div class="stats-card">
+                    <h3>Статистика</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-value" id="totalTasks">0</span>
+                            <span class="stat-label">Всего задач</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="completedTasks">0</span>
+                            <span class="stat-label">Выполнено</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <script src="/js/auth.js"></script>
