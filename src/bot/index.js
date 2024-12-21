@@ -1,40 +1,71 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { User } = require('../models');
-const config = require('../config/config');
+const botConfig = require('../config/bot');
 
 class TelegramBotService {
     constructor() {
-        this.bot = new TelegramBot(config.telegram.token, {
-            polling: {
-                interval: 300,
-                autoStart: true,
-                params: {
-                    timeout: 10
-                }
-            },
-            webHook: {
-                port: config.telegram.webhookPort
-            }
-        });
-
+        const options = this.getOptions();
+        this.bot = new TelegramBot(botConfig.token, options);
         this.setupErrorHandling();
         this.setupCommands();
     }
 
+    getOptions() {
+        if (botConfig.mode === 'webhook') {
+            return {
+                webHook: {
+                    port: botConfig.webhook.port,
+                    cert: botConfig.webhook.certificate
+                }
+            };
+        }
+        return {
+            polling: botConfig.polling
+        };
+    }
+
     setupErrorHandling() {
-        this.bot.on('polling_error', (error) => {
-            console.error('Telegram polling error:', error.code);
-            
-            // Автоматический реконнект при ошибках
-            if (error.code === 'ETELEGRAM' || error.code === 'ECONNRESET') {
-                setTimeout(() => {
-                    console.log('Attempting to reconnect to Telegram...');
+        this.bot.on('error', (error) => {
+            console.error('Bot error:', error.code);
+            this.handleError(error);
+        });
+
+        if (botConfig.mode === 'polling') {
+            this.bot.on('polling_error', (error) => {
+                console.error('Polling error:', error.code);
+                this.handleError(error);
+            });
+        }
+    }
+
+    handleError(error) {
+        if (error.code === 'ETELEGRAM' || error.code === 'ECONNRESET') {
+            setTimeout(() => {
+                console.log('Attempting to reconnect...');
+                if (botConfig.mode === 'polling') {
                     this.bot.stopPolling()
                         .then(() => this.bot.startPolling())
                         .catch(console.error);
-                }, 5000);
+                } else {
+                    this.setupWebhook()
+                        .catch(console.error);
+                }
+            }, 5000);
+        }
+    }
+
+    async setupWebhook() {
+        if (botConfig.mode === 'webhook') {
+            try {
+                await this.bot.setWebHook(botConfig.webhook.url, {
+                    certificate: botConfig.webhook.certificate
+                });
+                console.log('Webhook set successfully');
+            } catch (error) {
+                console.error('Error setting webhook:', error);
+                throw error;
             }
-        });
+        }
     }
 
     setupCommands() {
@@ -70,6 +101,15 @@ class TelegramBotService {
             await this.bot.sendMessage(chatId, 'Произошла ошибка при регистрации. Пожалуйста, попробуйте позже.');
         }
     }
+
+    async start() {
+        if (botConfig.mode === 'webhook') {
+            return this.setupWebhook();
+        } else {
+            return this.bot.startPolling();
+        }
+    }
 }
 
-module.exports = new TelegramBotService();
+const botService = new TelegramBotService();
+module.exports = botService;
