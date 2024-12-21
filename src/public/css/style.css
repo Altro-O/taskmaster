@@ -34,216 +34,34 @@ body {
 h1 {
     color: var(--primary);
     font-size: 3em;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 2px;
 }
 
-p {
+.tagline {
+    color: var(--dark);
     font-size: 1.2em;
-    line-height: 1.6;
     margin-bottom: 30px;
 }
 
-a {
-    color: var(--primary);
-    text-decoration: none;
-    font-weight: bold;
-    transition: color 0.3s ease;
-}
-
-a:hover {
-    color: var(--accent);
-}
-
-.features {
-    text-align: left;
-    margin-top: 40px;
-    padding: 20px;
-    background: var(--light);
-    border-radius: 15px;
-}
-
-h2 {
-    color: var(--dark);
-    margin-bottom: 20px;
-    font-size: 1.8em;
-}
-
-ul {
-    list-style: none;
-    padding: 0;
-}
-
-li {
-    margin: 15px 0;
-    font-size: 1.1em;
-    display: flex;
-    align-items: center;
-    transition: transform 0.3s ease;
-}
-
-li:hover {
-    transform: translateX(10px);
-}
-
-.logo {
-    width: 150px;
-    height: auto;
-    margin-bottom: 20px;
-}
-
-.bot-link {
-    display: inline-block;
-    background: var(--primary);
-    color: white;
-    padding: 12px 25px;
-    border-radius: 25px;
-    margin: 20px 0;
-    transition: all 0.3s ease;
-}
-
-.bot-link:hover {
-    background: var(--accent);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 600px) {
-    .container {
-        padding: 20px;
-        width: 95%;
-    }
-
-    h1 {
-        font-size: 2em;
-    }
-
-    p {
-        font-size: 1em;
-    }
-}
-
-/* Добавляем стили для дашборда */
-.dashboard {
-    display: grid;
-    grid-template-columns: 250px 1fr;
-    min-height: 100vh;
-}
-
-.sidebar {
-    background: var(--dark);
-    color: white;
-    padding: 20px;
-}
-
-.content {
-    padding: 30px;
-    background: #f5f6fa;
-}
-
-/* Добавляем стили для авторизации */
 .auth-section {
-    background: rgba(255, 255, 255, 0.9);
+    background: white;
     padding: 30px;
     border-radius: 15px;
     margin: 30px 0;
-    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
-.auth-hint {
+.auth-description {
     color: var(--dark);
-    margin-top: 15px;
-    font-size: 0.9em;
+    margin-bottom: 20px;
 }
 
-.or-divider {
-    text-align: center;
-    margin: 20px 0;
-    position: relative;
+.features {
+    margin-top: 30px;
 }
 
-.or-divider::before,
-.or-divider::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 45%;
-    height: 1px;
-    background: rgba(0,0,0,0.1);
-}
-
-.or-divider::before { left: 0; }
-.or-divider::after { right: 0; }
-
-.or-divider span {
-    background: white;
-    padding: 0 15px;
-    color: var(--dark);
-    font-size: 0.9em;
-}
-
-/* Стиль для кнопки New Task */
-.new-task-btn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.new-task-btn:hover {
-    background: var(--accent);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-}
-
-/* ... остальные стили ... */
-
-.features h3 {
-    color: var(--primary);
-    margin: 20px 0 10px;
-    font-size: 1.2em;
-}
-
-.features-list {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    margin-top: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.features-list ul {
-    margin-left: 20px;
-}
-
-.features-list li {
-    margin: 10px 0;
-    color: var(--dark);
-    font-size: 1em;
-    line-height: 1.4;
-}
-
-.features h2 {
-    background: var(--primary);
-    color: white;
-    padding: 15px 20px;
-    border-radius: 10px;
-    margin: 0;
-    transition: background-color 0.3s;
-}
-
-.features h2:hover {
-    background: var(--accent);
-}
-
-/* Стили для раскрывающегося списка возможностей */
 .features-button {
     background: var(--primary);
     color: white;
@@ -258,23 +76,11 @@ li:hover {
     align-items: center;
     justify-content: space-between;
     transition: all 0.3s ease;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
 .features-button:hover {
     background: var(--accent);
     transform: translateY(-2px);
-}
-
-.features-button:after {
-    content: '▼';
-    font-size: 0.8em;
-    transition: transform 0.3s ease;
-}
-
-.features-button.expanded:after {
-    transform: rotate(180deg);
 }
 
 .features-content {
@@ -289,39 +95,60 @@ li:hover {
 .features-content.expanded {
     max-height: 1000px;
     padding: 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
 .feature-category {
     margin-bottom: 25px;
+    text-align: left;
 }
 
 .feature-category h3 {
     color: var(--primary);
     font-size: 1.3em;
     margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
 .feature-category ul {
-    margin-left: 35px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
 }
 
 .feature-category li {
     margin: 12px 0;
-    color: var(--dark);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.1em;
+    padding-left: 25px;
+    position: relative;
 }
 
 .feature-category li:before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    background: var(--primary);
-    border-radius: 50%;
-} 
+    content: '•';
+    color: var(--primary);
+    position: absolute;
+    left: 10px;
+}
+
+#auth-status {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.loading {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--light);
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 20px;
+        margin: 20px;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+}

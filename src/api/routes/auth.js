@@ -3,7 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const config = require('../../config/config');
-const User = require('../../models/User');
+const { User } = require('../../models');
 const authMiddleware = require('../middleware/auth');
 
 // Регистрация
@@ -121,17 +121,14 @@ router.post('/telegram', async (req, res) => {
         console.log('Received auth request:', req.body);
         const { id, first_name, username } = req.body;
 
+        // Проверяем id
         if (!id) {
-            console.error('Missing telegram id');
             return res.status(400).json({ error: 'Missing telegram id' });
         }
 
-        // Сначала ищем пользователя
-        let user = await User.findOne({
-            where: { telegramId: id.toString() }
-        });
+        // Ищем или создаем пользователя
+        let user = await User.findOne({ where: { telegramId: id.toString() } });
 
-        // Если нет - создаем
         if (!user) {
             user = await User.create({
                 telegramId: id.toString(),
@@ -148,7 +145,7 @@ router.post('/telegram', async (req, res) => {
             });
         }
 
-        // Создаем JWT токен
+        // Создаем токен
         const token = jwt.sign(
             { id: user.id, telegramId: user.telegramId },
             config.jwt.secret,
@@ -168,11 +165,7 @@ router.post('/telegram', async (req, res) => {
         });
     } catch (error) {
         console.error('Auth error:', error);
-        res.status(500).json({ 
-            success: false,
-            error: 'Authentication failed',
-            details: error.message
-        });
+        res.status(500).json({ error: 'Authentication failed' });
     }
 });
 

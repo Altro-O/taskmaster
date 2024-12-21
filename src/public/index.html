@@ -3,30 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskMaster - Авторизация</title>
+    <title>TaskMaster - Умный планировщик задач</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <div class="auth-section">
-        <h1 class="auth-title">Войти в TaskMaster</h1>
-        <p class="auth-description">
-            Используйте свой аккаунт Telegram для быстрого входа в систему
-        </p>
-        
-        <form id="auth-form" onsubmit="return false;">
-            <!-- Telegram Login Widget -->
-            <script async 
-                src="https://telegram.org/js/telegram-widget.js?22" 
-                data-telegram-login="taskmaster_altro_bot" 
-                data-size="large" 
-                data-radius="10"
-                data-onauth="onTelegramAuth(user)"
-                data-request-access="write">
-            </script>
-        </form>
-        
-        <div id="auth-status"></div>
+    <div class="container">
+        <h1>TaskMaster</h1>
+        <p class="tagline">Умный планировщик задач с Telegram-интеграцией</p>
+
+        <div class="auth-section">
+            <h2>Войти через Telegram</h2>
+            <p class="auth-description">
+                Быстрый вход через ваш Telegram аккаунт
+            </p>
+            
+            <form id="auth-form" onsubmit="return false;">
+                <script async 
+                    src="https://telegram.org/js/telegram-widget.js?22" 
+                    data-telegram-login="taskmaster_altro_bot" 
+                    data-size="large" 
+                    data-radius="10"
+                    data-onauth="onTelegramAuth(user)"
+                    data-request-access="write">
+                </script>
+            </form>
+            
+            <div id="auth-status"></div>
+        </div>
+
+        <div class="features">
+            <button class="features-button" onclick="toggleFeatures(this)">
+                Возможности TaskMaster
+            </button>
+            <div class="features-content">
+                <div class="feature-category">
+                    <h3>🎯 Управление задачами</h3>
+                    <ul>
+                        <li>Создание и отслеживание задач</li>
+                        <li>Приоритеты и дедлайны</li>
+                        <li>Подзадачи и чек-листы</li>
+                    </ul>
+                </div>
+
+                <div class="feature-category">
+                    <h3>📱 Telegram интеграция</h3>
+                    <ul>
+                        <li>Управление через бота</li>
+                        <li>Мгновенные уведомления</li>
+                        <li>Быстрые действия</li>
+                    </ul>
+                </div>
+
+                <div class="feature-category">
+                    <h3>📊 Аналитика</h3>
+                    <ul>
+                        <li>Статистика выполнения</li>
+                        <li>Отчеты и графики</li>
+                        <li>Прогресс и достижения</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
+
     <script src="/js/auth.js"></script>
+    <script>
+        function toggleFeatures(button) {
+            const content = button.nextElementSibling;
+            button.classList.toggle('expanded');
+            content.classList.toggle('expanded');
+        }
+    </script>
 </body>
 </html> 
