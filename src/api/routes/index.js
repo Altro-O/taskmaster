@@ -4,6 +4,9 @@ const authMiddleware = require('../middleware/auth');
 const authRoutes = require('./auth');
 const taskRoutes = require('./tasks');
 const projectRoutes = require('./projects');
+const templatesRoutes = require('./templates');
+const achievementsRoutes = require('./achievements');
+const analyticsRoutes = require('./analytics');
 
 // Роуты авторизации (без middleware)
 router.use('/auth', authRoutes);
@@ -11,5 +14,8 @@ router.use('/auth', authRoutes);
 // Защищенные роуты (с middleware)
 router.use('/tasks', authMiddleware, taskRoutes);
 router.use('/projects', authMiddleware, projectRoutes);
+router.use('/templates', authMiddleware, templatesRoutes);
+router.use('/achievements', authMiddleware, achievementsRoutes);
+router.use('/analytics', authMiddleware, analyticsRoutes);
 
 module.exports = router; 

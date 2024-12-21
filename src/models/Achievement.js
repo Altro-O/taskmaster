@@ -1,24 +1,34 @@
-const mongoose = require('mongoose');
+const { Model, DataTypes } = require('sequelize');
 
-const achievementSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
-    type: {
-        type: String,
-        enum: [
-            'TASKS_COMPLETED',      // Выполнено задач
-            'PROJECTS_COMPLETED',   // Завершено проектов
-            'STREAK_DAYS',         // Дней подряд с выполненными задачами
-            'PRIORITY_MASTER',     // Выполнено важных задач
-            'EARLY_BIRD',         // Выполнено задач до дедлайна
-            'SUBTASK_MASTER'      // Выполнено подзадач
-        ],
-        required: true
-    },
-    level: { type: Number, default: 1 },
-    progress: { type: Number, default: 0 },
-    completed: { type: Boolean, default: false },
-    completedAt: Date,
-    createdAt: { type: Date, default: Date.now }
-});
+module.exports = (sequelize) => {
+    class Achievement extends Model {}
 
-module.exports = mongoose.model('Achievement', achievementSchema); 
+    Achievement.init({
+        type: {
+            type: DataTypes.ENUM(
+                'TASKS_COMPLETED',
+                'PROJECTS_COMPLETED',
+                'STREAK_DAYS',
+                'PRIORITY_MASTER'
+            ),
+            allowNull: false
+        },
+        level: {
+            type: DataTypes.INTEGER,
+            defaultValue: 1
+        },
+        progress: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
+        },
+        completed: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
+        }
+    }, {
+        sequelize,
+        modelName: 'Achievement'
+    });
+
+    return Achievement;
+}; 

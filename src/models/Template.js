@@ -9,9 +9,13 @@ module.exports = (sequelize) => {
             allowNull: false
         },
         description: DataTypes.TEXT,
-        taskTemplate: {
+        priority: {
+            type: DataTypes.ENUM('LOW', 'MEDIUM', 'HIGH'),
+            defaultValue: 'MEDIUM'
+        },
+        schedule: {
             type: DataTypes.JSON,
-            defaultValue: {}
+            defaultValue: null
         }
     }, {
         sequelize,

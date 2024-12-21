@@ -9,21 +9,14 @@ class TemplateController {
         logger.info('TemplateController initialized');
     }
 
-    async createTemplate(userId, title, description = '', priority = 'MEDIUM', projectId = null, schedule = null) {
+    async createTemplate(userId, data) {
         try {
-            logger.info(`Creating template for user ${userId}`);
-            const template = await Template.create({
-                title,
-                description,
-                priority,
-                schedule,
-                UserId: userId,
-                ProjectId: projectId
+            return await Template.create({
+                ...data,
+                UserId: userId
             });
-            logger.info(`Template created successfully: ${template.id}`);
-            return template;
         } catch (error) {
-            logger.error(`Error creating template for user ${userId}`, error);
+            console.error('Error creating template:', error);
             throw error;
         }
     }
@@ -31,8 +24,7 @@ class TemplateController {
     async getUserTemplates(userId) {
         try {
             return await Template.findAll({
-                where: { UserId: userId },
-                order: [['createdAt', 'DESC']]
+                where: { UserId: userId }
             });
         } catch (error) {
             console.error('Error getting templates:', error);

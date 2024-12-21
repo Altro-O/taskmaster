@@ -34,6 +34,18 @@ class GameService {
             throw error;
         }
     }
+
+    async checkAchievements(userId) {
+        // Проверка и выдача достижений
+    }
+    
+    async updateLeaderboard() {
+        // Обновление таблицы лидеров
+    }
+    
+    async calculatePoints(userId) {
+        // Подсчет очков
+    }
 }
 
 module.exports = GameService;

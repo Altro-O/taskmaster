@@ -30,26 +30,23 @@ class TaskController {
         }
     }
 
-    async updateTask(taskId, userId, updates) {
+    async updateTask(taskId, data) {
         try {
-            const [updated] = await Task.update(updates, {
-                where: { id: taskId, UserId: userId },
-                returning: true
+            const task = await Task.update(data, {
+                where: { id: taskId }
             });
 
-            if (!updated) throw new Error('Task not found');
+            // Синхронизируем с ботом
+            await global.services.sync.syncTaskUpdate(task);
 
-            const task = await Task.findOne({
-                where: { id: taskId, UserId: userId }
-            });
+            // Если задача выполнена, проверяем достижения
+            if (data.status === 'DONE') {
+                await this.checkAchievements(task.UserId);
+            }
 
-            if (updates.status === 'DONE' && task.status !== 'DONE') {
-                await User.increment(
-                    { 'stats.tasksCompleted': 1 },
-                    { where: { id: userId } }
-                );
-                task.completedAt = new Date();
-                await task.save();
+            // Если установлен дедлайн, настраиваем уведомление
+            if (data.deadline) {
+                await global.services.notification.scheduleDeadlineReminder(task);
             }
 
             return task;
