@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // API routes
 app.use('/api', routes);
 
-// SPA fallback - важно для работы роутинга на клиенте
+// SPA fallback
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
