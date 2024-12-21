@@ -49,11 +49,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function createTask() {
     const modal = document.getElementById('createTaskModal');
-    if (modal) {
-        modal.style.display = 'block';
-    } else {
+    if (!modal) {
         console.error('Modal element not found');
+        return;
     }
+    modal.style.display = 'block';
 }
 
 async function submitTask(event) {

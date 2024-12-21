@@ -4,10 +4,14 @@ const TaskController = require('../../controllers/TaskController');
 
 router.get('/', async (req, res) => {
     try {
-        const tasks = await TaskController.getUserTasks(req.user.id);
+        const tasks = await Task.findAll({
+            where: { UserId: req.user.id },
+            order: [['createdAt', 'DESC']]
+        });
         res.json(tasks);
     } catch (error) {
-        res.status(500).json({ error: 'Failed to get tasks' });
+        console.error('Error getting tasks:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 

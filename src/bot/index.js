@@ -302,13 +302,10 @@ ${await this.formatAchievements(msg.from.id)}
 
     async start() {
         try {
-            // Проверяем, нет ли уже запущенного бота
-            await this.bot.deleteWebhook();
-            
-            if (config.mode === 'webhook') {
-                return this.setupWebhook();
-            } else {
+            if (this.bot.options.polling) {
                 return this.bot.startPolling();
+            } else if (config.mode === 'webhook') {
+                return this.setupWebhook();
             }
         } catch (error) {
             console.error('Error starting bot:', error);
