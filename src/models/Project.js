@@ -1,23 +1,20 @@
 const { Model, DataTypes } = require('sequelize');
 
-module.exports = (sequelize) => {
-    class Project extends Model {}
-
-    Project.init({
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false
-        },
+module.exports = (sequelize, DataTypes) => {
+    const Project = sequelize.define('Project', {
+        title: DataTypes.STRING,
         description: DataTypes.TEXT,
         status: {
-            type: DataTypes.ENUM('ACTIVE', 'COMPLETED', 'ARCHIVED'),
-            defaultValue: 'ACTIVE'
+            type: DataTypes.ENUM('TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'),
+            defaultValue: 'TODO'
         },
         deadline: DataTypes.DATE
-    }, {
-        sequelize,
-        modelName: 'Project'
     });
+
+    Project.associate = function(models) {
+        Project.belongsTo(models.User);
+        Project.hasMany(models.Task);
+    };
 
     return Project;
 }; 
