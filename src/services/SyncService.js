@@ -30,4 +30,6 @@ ${task.deadline ? `⏰ Дедлайн: ${new Date(task.deadline).toLocaleString(
             );
         }
     }
-} 
+}
+
+module.exports = SyncService; 
