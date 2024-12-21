@@ -97,7 +97,7 @@ async function updateTaskStatus(taskId, status) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        await loadTasks(); // Перезагружаем список задач
+        await loadTasks();
     } catch (error) {
         console.error('Error updating task:', error);
     }

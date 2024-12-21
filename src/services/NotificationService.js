@@ -10,15 +10,15 @@ class NotificationService {
     }
 
     async startScheduler() {
-        // Каждый день в 9:00
-        schedule.scheduleJob('0 9 * * *', async () => {
+        // Проверка дедлайнов каждый час
+        schedule.scheduleJob('0 * * * *', async () => {
+            const now = new Date();
+            const dayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            
             const tasks = await Task.findAll({
                 where: {
                     deadline: {
-                        [Op.between]: [
-                            new Date(),
-                            new Date(Date.now() + 24 * 60 * 60 * 1000)
-                        ]
+                        [Op.between]: [now, dayFromNow]
                     },
                     status: {
                         [Op.ne]: 'DONE'
@@ -28,33 +28,58 @@ class NotificationService {
             });
 
             for (const task of tasks) {
-                await this.sendDeadlineReminder(task.User.telegramId, task);
+                if (task.User?.telegramId) {
+                    const timeLeft = Math.round((new Date(task.deadline) - now) / (1000 * 60 * 60));
+                    await this.sendDeadlineReminder(task.User.telegramId, task, timeLeft);
+                }
             }
         });
 
-        // Еженедельный отчет по воскресеньям
-        schedule.scheduleJob('0 18 * * 0', async () => {
-            const users = await User.findAll();
-            for (const user of users) {
-                await this.sendWeeklyReport(user.telegramId);
+        // Проверка просроченных задач
+        schedule.scheduleJob('0 9 * * *', async () => {
+            const tasks = await Task.findAll({
+                where: {
+                    deadline: {
+                        [Op.lt]: new Date()
+                    },
+                    status: {
+                        [Op.ne]: 'DONE'
+                    }
+                },
+                include: [User]
+            });
+
+            for (const task of tasks) {
+                if (task.User?.telegramId) {
+                    await this.sendOverdueNotification(task.User.telegramId, task);
+                }
             }
         });
     }
 
-    async sendDeadlineReminder(userId, task) {
-        try {
-            const message = `
+    async sendDeadlineReminder(userId, task, hoursLeft) {
+        const message = `
 ⚠️ Напоминание о задаче!
 
 📝 ${task.title}
-⏰ Дедлайн: ${new Date(task.deadline).toLocaleString()}
+⏰ До дедлайна осталось: ${hoursLeft} часов
+Дедлайн: ${new Date(task.deadline).toLocaleString()}
 `;
-            await this.bot.sendMessage(userId, message);
-        } catch (error) {
-            console.error('Error sending reminder:', error);
-        }
+        await this.bot.sendMessage(userId, message);
     }
-    
+
+    async sendOverdueNotification(userId, task) {
+        const message = `
+🚨 Просроченная задача!
+
+📝 ${task.title}
+⏰ Дедлайн был: ${new Date(task.deadline).toLocaleString()}
+
+Пожалуйста, обновите статус задачи или измените дедлайн.
+`;
+        await this.bot.sendMessage(userId, message);
+    }
+
     async sendAchievementNotification(userId, achievement) {
         try {
             const message = `
@@ -95,7 +120,7 @@ ${achievement.description}
             user.settings.notificationTime = time;
             await user.save();
 
-            // Обновляем расписание для этого пользователя
+            // О��новляем расписание для этого пользователя
             this.scheduleUserNotifications(user);
 
             await this.bot.sendMessage(userId, 
@@ -147,4 +172,5 @@ ${tasks.map(t => `${t.status === 'DONE' ? '✅' : '⏳'} ${t.title}`).join('\n')
     }
 }
 
+module.exports = NotificationService; 
 module.exports = NotificationService; 
